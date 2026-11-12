@@ -8,7 +8,7 @@ The workflow checks:
 
 - Node.js 22 and 24 on Ubuntu, Windows, and macOS.
 - A packaged global installation, executable entry point, and help command on each platform.
-- Actual GitHub installation using npm 12 on all three operating systems.
+- Actual HTTPS archive installation using npm 12 on all three operating systems.
 - Package contents: exactly the intended seven application files, with no Android keys, caches, test fixtures, or dependencies bundled in the archive.
 - Argument handling, exit codes, environment configuration, pairing flow, and actionable failure messages.
 
@@ -43,7 +43,7 @@ For Kali, check a native installation and, if relevant, a VM with bridged networ
 
 - Confirm all GitHub Actions jobs pass for the intended commit.
 - Perform QR and code pairing with at least one real Android phone and record the result.
-- Confirm installation instructions match the npm version used, especially npm 12's `--allow-git=all` requirement.
+- Confirm installation instructions match the npm version used, especially npm 12's `--allow-remote=all` requirement for HTTPS archives.
 - Check README requirements and error examples against the actual commands.
 - Keep untested platforms or device combinations explicitly marked as unverified.
 

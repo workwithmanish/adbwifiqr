@@ -1,114 +1,57 @@
-# adb / wifi qr
+# ADB Wi-Fi QR
 
-**Pair your Android phone from your terminal. No USB cable needed.**
+**Pair Android over Wi-Fi, directly from your terminal.**
 
-A minimal terminal tool for Android wireless debugging: scan a QR, pair with a six-digit code, and check connected devices.
+QR pairing · Automatic connection discovery · Pairing-code fallback · ADB shell guidance
 
-[Install](#install) · [Pair your phone](#pair-your-phone) · [Open an ADB shell](#open-an-adb-shell-after-qr-pairing) · [Commands](#commands) · [Troubleshooting](#troubleshooting) · [Update](#update)
+[Install](#install) · [Pair](#pair-your-phone) · [Open a shell](#open-an-adb-shell) · [Commands](#commands) · [Troubleshooting](#troubleshooting) · [Update](#update)
 
 ## Install
 
-Install the latest code directly from GitHub (no version tag required):
+Install the latest code from GitHub's HTTPS source archive:
 
 ```bash
-npm install -g --allow-git=all github:workwithmanish/adbwifiqr
-```
-
-The `--allow-git=all` flag handles npm 12's Git-download restriction and the `EALLOWGIT` error. It applies to this command only.
-
-If using the user-owned prefix recommended for Kali/macOS:
-
-```bash
-npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-This flag applies only to that command; it does not change your global npm configuration. The package has no installation lifecycle scripts. If an older npm reports an unknown `allow-git` option, omit the flag. Check your version with `npm --version`. Use the same flag when updating on npm 12.
-
-Then run from **any directory**:
-
-```bash
+npm install -g --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main"
 adbwifiqr
 ```
 
-Each screen displays the app version. The current version is **1.3.2**. If you still see the old interface after reinstalling, run `adbwifiqr --version` and check for another installation with `type -a adbwifiqr` on Linux/macOS or `Get-Command adbwifiqr -All` on PowerShell. Reopen your terminal after correcting PATH.
+No version tag is required. The installed command works from any directory. This project is not published to the npm registry; use the full archive URL above, not `npm install -g adbwifiqr`.
 
-No cloning or `npm start` is required for normal use. This package is distributed through GitHub and is **not published to the npm registry**. Use the complete GitHub install command above, not `npm install -g adbwifiqr` or `npx adbwifiqr`. The npm client downloads it from GitHub and creates the `adbwifiqr` terminal command.
+**Why an archive?** Some npm Git-install paths call the deprecated `url.parse()` API and produce `DEP0169` before the app starts. HTTPS archive installation avoids that Git helper. Warnings are not disabled or filtered. CI installs with a test hook that fails if `url.parse()` is invoked at all.
 
-### Do I need `#v1.3.2`?
-
-**No.** The command without a tag installs the latest code from the repository's default branch. A tag is optional and selects a fixed release for repeatable testing:
-
-```bash
-npm install -g --allow-git=all "github:workwithmanish/adbwifiqr#v1.3.2"
-```
-
-Use the tag-free commands below for normal installation and updates. Add the same `--prefix` option if you install into a user-owned location.
+`--allow-remote=all` permits this remote archive for the current invocation, as required by npm 12. It does not change global npm settings. If older npm rejects that option, omit it. `--prefer-online` requests freshness checks for updates from the same URL.
 
 ### Requirements
 
-| Requirement | Details |
+| Item | Requirement |
 | --- | --- |
 | Computer | Windows, Linux (including Kali), or macOS |
-| Node.js and npm | Node.js **22+**; a supported LTS release recommended |
-| Git | Required for installing from GitHub |
-| ADB | Recent Android SDK Platform Tools with `pair` support; ADB's own mDNS backend is optional |
-| Phone | Android **11+**, with Wireless debugging available |
-| Network | Phone and computer on the same trusted local network, with device-to-device communication allowed |
+| Node.js | 22 or newer, preferably a supported LTS release; npm included |
+| ADB | Recent Android SDK Platform Tools with `adb pair` support |
+| Phone | Android 11+ with Wireless debugging available |
+| Network | Both devices on the same trusted network, with device-to-device traffic allowed |
 
-ADB must be installed separately. Android Studio, a USB cable, and phone root are not required for this pairing flow. This is a computer-side tool, not a phone app or screen-mirroring application.
+No phone root, USB cable, Android Studio, or global Git installation is needed for archive installation. This is a computer-side pairing tool, not a phone app or screen mirror.
 
-### Kali Linux
+### Kali Linux: fresh installation
 
-Install prerequisites:
+Install prerequisites and check their versions:
 
 ```bash
 sudo apt update
-sudo apt install -y git nodejs npm adb
+sudo apt install -y nodejs npm adb
 node --version
 npm --version
 adb version
-adb help
 ```
 
-Node must report `v22` or newer. ADB help must include `pair`. Version 1.3.0 uses node-dns-sd 0.4.2 for direct network discovery, so an empty or unavailable ADB mDNS backend does not by itself prevent QR pairing. Versions depend on your repositories. If Node is too old, follow the [official Node.js download instructions](https://nodejs.org/en/download) to install a supported LTS version. If ADB is too old, install [Google's current Platform Tools](https://developer.android.com/tools/releases/platform-tools) and use the [custom ADB path](#custom-adb-path) below.
+Node must show `v22` or newer. Package versions depend on your repositories. If needed, install a supported LTS version using the [Node.js download instructions](https://nodejs.org/en/download). If ADB lacks `pair`, install [Google Platform Tools](https://developer.android.com/tools/releases/platform-tools) and configure `ADB_PATH` below.
 
-For a fresh installation, use this user-owned npm location so no `sudo npm` is needed. The command installs the latest code without a version tag:
+Install into a user-owned folder so npm does not need sudo:
 
 ```bash
 mkdir -p "$HOME/.local"
-npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
-export PATH="$HOME/.local/bin:$PATH"
-adbwifiqr --version
-adbwifiqr doctor
-adbwifiqr
-```
-
-The `export` applies to this terminal. To make it permanent, add this line once to your shell configuration (`~/.zshrc` for zsh, or `~/.bashrc` for bash), then reopen the terminal:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Run `echo "$SHELL"` if you are unsure which shell you use. Do not run this tool with sudo. If a Node version manager already provides a writable global npm prefix, the shorter `npm install -g --allow-git=all github:workwithmanish/adbwifiqr` command also works.
-
-#### Repeat a fresh-install test on Kali
-
-New users can skip this section. To retest installation and pairing from scratch:
-
-1. On Android, open **Wireless debugging > Paired devices**, select this computer, and tap **Forget**. Uninstalling the npm package alone does not revoke pairing.
-2. Uninstall from the **same npm prefix used for your previous installation**. For the user-owned prefix above:
-
-```bash
-npm uninstall -g --prefix "$HOME/.local" adbwifiqr
-```
-
-If you originally installed into npm's default global prefix instead, use `npm uninstall -g adbwifiqr` from that same account/environment.
-
-3. Install the latest code and reset the shell's command cache:
-
-```bash
-npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main"
 export PATH="$HOME/.local/bin:$PATH"
 hash -r
 adbwifiqr --version
@@ -116,103 +59,84 @@ adbwifiqr doctor
 adbwifiqr
 ```
 
-4. Scan the newly generated QR using Android's Wireless debugging scanner. Then run `adbwifiqr devices` and `adb shell`. If automatic connection fails, follow the exact connection guidance printed by the tool.
+The current release is **1.4.0**. Add the following line once to `~/.zshrc` (or `~/.bashrc` for Bash), then reopen the terminal, to keep the command on PATH:
 
-The private settings folder remains after uninstalling; you do not need to delete it for a fresh pairing test once the phone has forgotten the computer. If the version remains old, run `type -a adbwifiqr` to find duplicate commands and correct PATH.
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
 
-**Kali in VirtualBox/VMware:** the VM must reach the phone directly. Bridged networking is often needed for multicast discovery; NAT may block it even when internet access works. If the phone is reachable but discovery fails, use `adbwifiqr pair`.
+Use `echo "$SHELL"` to check your shell. Run npm and the tool as your regular user. For Kali inside VirtualBox/VMware, the VM must reach the phone; bridged networking is often needed for multicast discovery. Internet access through NAT alone does not prove discovery will work.
 
 ### Windows (PowerShell)
 
-1. Install [Node.js LTS](https://nodejs.org/en/download) and [Git for Windows](https://git-scm.com/downloads/win), then reopen PowerShell.
-2. Download and extract the Windows ZIP from [Google Platform Tools](https://developer.android.com/tools/releases/platform-tools).
-3. Add the extracted `platform-tools` folder to PATH, or set the actual executable path for this terminal:
+Install [Node.js LTS](https://nodejs.org/en/download) and extract the Windows ZIP from [Google Platform Tools](https://developer.android.com/tools/releases/platform-tools). Reopen PowerShell. Add the extracted `platform-tools` folder to PATH or set its actual executable location:
 
 ```powershell
-$env:ADB_PATH = 'C:\path\to\platform-tools\adb.exe'
-```
-
-Replace the example path before running it. Install and start:
-
-```powershell
-npm install -g --allow-git=all github:workwithmanish/adbwifiqr
+$env:ADB_PATH = 'C:\your\path\platform-tools\adb.exe'
+npm install -g --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main"
 adbwifiqr doctor
 adbwifiqr
 ```
 
-If PowerShell blocks `.ps1` scripts, use `npm.cmd` and `adbwifiqr.cmd` instead. No execution-policy change is needed.
+Replace the sample ADB path first. If PowerShell blocks `.ps1` scripts, use `npm.cmd` and `adbwifiqr.cmd`. No execution-policy change is needed.
 
 ### macOS
 
 If you use [Homebrew](https://brew.sh/):
 
 ```bash
-brew install node git
+brew install node
 brew install --cask android-platform-tools
 ```
 
-Alternatively, install [Node.js LTS](https://nodejs.org/en/download), [Git](https://git-scm.com/downloads/mac), and [Google Platform Tools](https://developer.android.com/tools/releases/platform-tools) separately.
-
-Install the command in a user-owned location:
+Alternatively, install Node.js and Platform Tools from the official links above. Then use the user-owned installation:
 
 ```bash
 mkdir -p "$HOME/.local"
-npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main"
 export PATH="$HOME/.local/bin:$PATH"
 adbwifiqr doctor
 adbwifiqr
 ```
 
-Add the PATH line to `~/.zshrc` (or your shell's configuration file) once to keep it after restarting the terminal. If your npm global prefix is already writable and on PATH, the shorter install command at the top also works.
+Add the PATH line once to your shell configuration, usually `~/.zshrc`. Other Linux distributions can follow the same installation after installing compatible Node.js, npm, and ADB. On ARM, choose ADB binaries built for your architecture.
 
-### Other Linux distributions
+### Install an exact release (optional)
 
-Install Git, Node.js 22+ with npm, and recent ADB using your package manager or the official downloads above. Then follow the user-owned npm installation steps for Kali. Debian/Ubuntu often use the same package names, but verify their Node and ADB versions. On ARM systems, choose binaries matching your architecture rather than assuming Google's Linux ZIP matches your CPU.
+The main-branch archive above selects the latest code. For a repeatable version, use a tag archive instead:
+
+```bash
+npm install -g --allow-remote=all "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/tags/v1.4.0"
+```
+
+Keep the same `--prefix` option if you used a user-owned installation. GitHub shorthand installations may still work, but may trigger npm's deprecated Git URL parser; use the archive route to avoid that code path.
 
 ## Pair your phone
 
-1. Put the computer and phone on the same trusted network. Avoid guest networks that isolate devices.
-2. Enable Developer options: usually **Settings > About phone > Build number**, then tap Build number seven times. Some brands put it under Software information. Enter your PIN if asked.
-3. Open **Settings > Developer options > Wireless debugging**, turn it on, and approve your trusted network if prompted.
-4. On your computer, run:
+1. Connect your computer and phone to the same trusted Wi-Fi/network.
+2. Enable Developer options on Android: usually **Settings > About phone > Build number**, then tap seven times. Some brands place Build number under Software information. Enter your PIN if asked.
+3. Open **Settings > Developer options > Wireless debugging**, turn it on, and approve the trusted network.
+4. Run `adbwifiqr` on the computer.
+5. On Android, choose **Pair device with QR code** and scan using that scanner, not the ordinary camera app.
 
-```bash
-adbwifiqr
-```
-
-5. On the phone, tap **Pair device with QR code** and scan the terminal QR using that scanner, not your ordinary camera.
-6. Wait for **Pairing complete**, then check:
-
-```bash
-adbwifiqr devices
-```
-
-A device marked **connected** is ready for ADB. Pairing and connection are separate steps; if the device is absent, use [Connect after pairing](#connect-after-pairing).
-
-Version **1.3.1** automatically looks for the paired phone's separate connection service and runs `adb connect` using its advertised connection port. This works independently of ADB's own mDNS backend. If the network does not expose that service, pairing remains successful and the tool explains how to connect manually. `doctor` now checks both pairing and connection services.
-
-Version **1.3.2** retries connection discovery up to three times and displays the phone's detected connection address. If auto-connect fails but the address is discovered, it prints a complete, ready-to-use `adb connect IP:PORT` command and `adb shell`. The address comes from the current phone announcement; it is not hardcoded. If the port cannot be discovered, it shows the known phone IP with a `<PORT>` placeholder and explains that only the connection port must be read from Android. It never substitutes the pairing port or guesses a connection port.
-
-The tool waits up to three minutes. Press **Ctrl+C** to stop. Each run generates fresh QR credentials; completed pairing remains on your phone after stopping.
+The terminal groups the result and next action into panels:
 
 ```text
-  adb / wifi qr
-  Wireless Android pairing
-
-  ──────────────────────────────────────────────────────
-  qr pairing  ·  Android 11+
-  ✓ ADB ready
-
-  Set up your phone
-
-  01  Put your phone and PC on the same trusted Wi-Fi.
-  02  Phone: Settings > Developer options > Wireless debugging.
-  03  Enable it, then tap Pair device with QR code.
-
-  Scan with your phone
-
-      [A fresh, scannable QR appears here]
+  ┌──────────────────────────────────────────────┐
+  │  PAIRED · CONNECTION PENDING                 │
+  ├──────────────────────────────────────────────┤
+  │  Pairing      Complete                       │
+  │  Connection   Needs one more step            │
+  │  Phone IP     192.168.1.5                     │
+  │  ADB address  Connection port not discovered │
+  └──────────────────────────────────────────────┘
 ```
+
+A **READY TO USE** result means the phone is connected. The app automatically searches for the paired phone's connection service up to three times. When it discovers the port, it attempts to connect and displays the address. If connection fails, it prints the exact detected `adb connect IP:PORT` command.
+
+If the network does not expose the port, the app shows the known IP with a `<PORT>` placeholder. Read only the connection port on Android's main Wireless debugging page. The tool cannot reliably infer that port from the pairing port and never guesses one.
+
+Press **Ctrl+C** to stop waiting. A fresh QR is generated for each run. Completed pairing remains valid after the tool exits until revoked on Android.
 
 ### Pair with a six-digit code
 
@@ -220,269 +144,152 @@ The tool waits up to three minutes. Press **Ctrl+C** to stop. Each run generates
 adbwifiqr pair
 ```
 
-1. On your phone, open **Wireless debugging > Pair device with pairing code**.
-2. Enter the dialog's **IP address and pairing port**, for example `192.168.1.5:40123`.
-3. Enter the six-digit code. Keep the dialog open until pairing completes.
-4. Return to the **main Wireless debugging screen**.
-5. Enter that screen's **IP address and connection port** when prompted.
+On Android, choose **Wireless debugging > Pair device with pairing code**. Enter the dialog's IP/pairing port and six-digit code when prompted. Keep that dialog open until pairing completes. Then return to the **main Wireless debugging page** and enter its connection IP and port.
 
-**The pairing port and connection port are different.** Use each from its correct screen. Manual prompts currently accept IPv4 addresses; IPv6-only networks are not supported by them.
+**Pairing and connection use different ports.** Manual address prompts currently support IPv4; IPv6-only networks are not supported by those prompts.
 
-### Connect after pairing
+## Open an ADB shell
 
-Use the IP and port on the phone's **main Wireless debugging screen**:
-
-```bash
-adbwifiqr connect 192.168.1.5:37123
-adbwifiqr devices
-```
-
-Replace the example address with your phone's actual address. Ports can change when Wireless debugging restarts. You generally need not pair again while the phone remembers this computer and its ADB keys remain available.
-
-### Open an ADB shell after QR pairing
-
-**QR pairing authorizes the computer. An active ADB connection is also required before `adb shell` will work.** Version 1.3.1 attempts that connection automatically. If you see `adb: no devices/emulators found`, or your device list is empty, connect manually as follows.
-
-1. On your **Android phone**, open **Settings > Developer options > Wireless debugging**.
-2. On that **main page**, find **IP address & Port**. Return from the QR scanner or pairing-code dialog to see it. This is the **connection address**, not the temporary pairing address.
-3. On the computer, run `adb connect` with the address currently shown there. For example:
-
-```bash
-adb connect 192.168.0.182:36099
-```
-
-Replace `192.168.0.182:36099` with **your phone's current IP and port**. A successful response looks like:
-
-```text
-connected to 192.168.0.182:36099
-```
-
-4. Confirm the device is available, then open its shell:
+QR pairing authorizes your computer; an active connection is needed before a shell can open. Once the app reports connected:
 
 ```bash
 adb devices
 adb shell
 ```
 
-The device list should contain a row with state `device`. The shell prompt may look like `snow:/ $`; the name depends on the phone. Type `exit` to leave the phone's shell and return to your computer's terminal.
+If it says `adb: no devices/emulators found`:
 
-If more than one device is connected, select the exact serial from `adb devices`:
+1. On Android, open the **main Wireless debugging page**.
+2. Find **IP address & Port** there, outside the QR scanner/pairing-code dialog.
+3. Connect using that current address, then open the shell:
+
+```bash
+adb connect 192.168.0.182:36099
+adb devices
+adb shell
+```
+
+Replace that example with your actual address. The port can change when Wireless debugging restarts. Do not reuse the port from a pairing-success message. A device listed with state `device` is connected. A phone prompt such as `snow:/ $` means you are in its shell; type `exit` to return to your computer.
+
+With multiple devices, use the serial shown by `adb devices`:
 
 ```bash
 adb -s 192.168.0.182:36099 shell
 ```
 
-Use your actual device serial in place of the example. If you configured a custom `ADB_PATH`, use that same ADB executable for these direct ADB commands. You can also use `adbwifiqr connect IP:PORT` and `adbwifiqr devices` for the connection and device-list steps.
-
-The pairing and connection ports are different and can change when Wireless debugging restarts. Do not reuse a port from an old pairing message. Read the current connection address on Android's main Wireless debugging page.
+If you configured a custom `ADB_PATH`, use that same ADB executable for direct `adb` commands too.
 
 ## Commands
 
-These commands work from any directory after global installation:
-
 | Command | Purpose |
 | --- | --- |
-| `adbwifiqr` | Display a QR and wait for pairing |
-| `adbwifiqr pair` | Pair with a six-digit code, then connect |
-| `adbwifiqr doctor` | Check ADB, discovery, services, and devices |
-| `adbwifiqr devices` | Show devices and connection states |
+| `adbwifiqr` | Pair by QR, then attempt connection |
+| `adbwifiqr pair` | Pair using a six-digit code |
+| `adbwifiqr doctor` | Check ADB, network discovery, and devices |
+| `adbwifiqr devices` | List active device states |
 | `adbwifiqr connect IP:PORT` | Connect an already-paired phone |
 | `adbwifiqr --help` | Show commands |
-| `adbwifiqr --version` | Show the installed version without needing ADB |
+| `adbwifiqr --version` | Print only the installed version |
 
-### Custom ADB path
+### Custom ADB and settings
 
-Set `ADB_PATH` to the full executable path, not its folder. This applies to the current terminal.
-
-Linux/macOS:
+`ADB_PATH` selects an executable; the app otherwise uses `adb` from PATH.
 
 ```bash
 export ADB_PATH="/your/path/platform-tools/adb"
 adbwifiqr doctor
 ```
 
-Windows PowerShell:
+PowerShell equivalent: `$env:ADB_PATH = 'C:\your\path\platform-tools\adb.exe'`.
 
-```powershell
-$env:ADB_PATH = 'C:\your\path\platform-tools\adb.exe'
-adbwifiqr doctor
-```
+The installed command stores Android settings/keys in `~/.adbwifiqr/.android` or `%USERPROFILE%\.adbwifiqr\.android`. Set `ADBWIFIQR_HOME` to a different writable directory to override this. Package updates do not delete those settings. ADB is a shared background server and can retain keys/settings from an already-running instance.
 
-Without this variable, the tool uses `adb` from PATH. It does not install ADB or edit PATH itself.
-
-### Settings and appearance
-
-The installed command keeps Android settings and keys under `~/.adbwifiqr/.android` on Linux/macOS, or `%USERPROFILE%\.adbwifiqr\.android` on Windows. This avoids writing into potentially read-only global package directories and keeps keys across package updates.
-
-To choose a different writable location, set `ADBWIFIQR_HOME` before running. For example:
-
-```bash
-export ADBWIFIQR_HOME="$HOME/my-adb-settings"
-adbwifiqr
-```
-
-PowerShell:
-
-```powershell
-$env:ADBWIFIQR_HOME = 'D:\adbwifiqr'
-adbwifiqr
-```
-
-Use a Unicode-capable terminal and monospaced font. Colors and animation are disabled for redirected output. To disable text colors, use `NO_COLOR=1 adbwifiqr` on Linux/macOS, or set `$env:NO_COLOR = '1'` before running on PowerShell.
+Use a Unicode-capable terminal and monospaced font. Text colors and animation are disabled for redirected output. `NO_COLOR=1 adbwifiqr` disables text colors on Linux/macOS; on PowerShell set `$env:NO_COLOR = '1'`. This appearance option does not suppress errors or Node warnings.
 
 ## Troubleshooting
 
-| Problem | What to try |
+| Problem | Action |
 | --- | --- |
-| `adbwifiqr: command not found` | Confirm installation succeeded. Add your npm global executable directory to PATH and reopen the terminal. |
-| `EACCES` during npm install | Use the user-owned `--prefix "$HOME/.local"` installation above. Do not use sudo npm. |
-| `EALLOWGIT`: Git fetching disabled | On npm 12, add `--allow-git=all` to the GitHub install command for this invocation only. See Install above. |
-| `node`, `npm`, or `git` missing | Install the prerequisite, reopen the terminal, and check its version. |
-| Unsupported Node version | Install Node.js 22+ using a supported LTS release. |
-| ADB missing or too old | Install recent Platform Tools and configure `ADB_PATH`. ADB must support `pair`. |
-| Phone stays on “Pairing device” after scanning | Update to 1.3.0 or newer, stop the old session, reopen the phone's QR scanner, and scan the newly generated QR. This version uses direct mDNS discovery alongside ADB discovery. If both are blocked by the network, use code pairing. |
-| QR times out / no nearby services | Check Wireless debugging, Wi-Fi, VPN, firewall, and VM networking. Try `adbwifiqr pair`. |
-| Pairing code rejected | Open a fresh pairing-code dialog and retry before it expires. |
-| Paired but disconnected | Use `adbwifiqr connect IP:PORT` with the main screen's connection port. |
-| `adb shell` says `no devices/emulators found` after pairing | Read **IP address & Port** on Android's main Wireless debugging page, run `adb connect IP:PORT`, confirm with `adb devices`, then run `adb shell`. See [Open an ADB shell](#open-an-adb-shell-after-qr-pairing). |
-| Connection refused | Check the current IP and port and make sure Wireless debugging is on. |
-| Offline or unauthorized | Unlock the phone, check prompts, and retry. If needed, Forget this computer and pair again. |
-| QR distorted | Maximize the terminal, reduce font size, and prevent line wrapping. Try code pairing. |
+| `DEP0169` during the old GitHub shorthand install | Use the HTTPS archive command in Install. npm's Git helper contains a deprecated `url.parse()` call; this route avoids it without disabling warnings. |
+| `EALLOWREMOTE` | Include `--allow-remote=all` in the archive installation command for npm 12. |
+| `EALLOWGIT` with an old command | Switch to the documented archive installation; it does not fetch a Git dependency. |
+| `EACCES` when installing | Use the user-owned npm prefix above; do not use sudo npm. |
+| Command not found / old version | Reopen the terminal, check PATH, and run `type -a adbwifiqr` or PowerShell's `Get-Command adbwifiqr -All`. |
+| ADB not found or lacks pairing | Install recent Platform Tools and set `ADB_PATH`. |
+| QR pairing hangs | Check Wi-Fi, VPN, firewall, and VM networking. Try `adbwifiqr pair`. |
+| Code expired | Open a new code dialog and retry. |
+| Paired but disconnected | Use the connection command/address shown by the app. If the port is unknown, read it on Android's main Wireless debugging page. |
+| Connection refused | Recheck the phone's current address and ensure Wireless debugging is on. |
+| Shell says no devices | Run `adb connect IP:PORT`, check `adb devices`, then `adb shell`. |
+| QR is distorted | Maximize the terminal, reduce font size, or use code pairing. |
 | PowerShell blocks scripts | Use `npm.cmd` and `adbwifiqr.cmd`. |
 
-Find the global npm installation prefix:
+Code pairing bypasses discovery but still requires a direct network route to the phone. Guest/office networks can isolate devices. Allow ADB on your trusted private network if prompted; do not disable your firewall.
 
-```bash
-npm prefix -g
-```
-
-Executables are in its `bin` subdirectory on Linux/macOS and directly in that prefix on Windows. If you installed with `--prefix`, use `npm prefix -g --prefix` followed by that same path to inspect it. On Linux/macOS you can also check `command -v adbwifiqr`; on PowerShell use `Get-Command adbwifiqr`.
-
-Allow ADB through the firewall only on your trusted network if prompted; avoid disabling the firewall. Code pairing bypasses discovery but still requires a direct route to the phone.
-
-ADB uses a shared background server. An existing server may retain keys/settings from another installation. If versions or settings conflict, close other ADB tools and restart the selected ADB server. **This disconnects other ADB sessions.** For ADB on PATH:
-
-```bash
-adb kill-server
-adbwifiqr doctor
-```
-
-For a custom ADB executable, run that executable with `kill-server` instead. Pair again if necessary. When switching from an earlier source checkout to the global command, you may need to pair again because the default key directory changes. Alternatively, point `ADBWIFIQR_HOME` to the old project directory to reuse its settings.
-
-For help, [open an issue](https://github.com/workwithmanish/adbwifiqr/issues) with your OS, Node version, ADB version, and error text. Omit private keys, pairing codes, QR credentials, and personal device information.
+If multiple ADB versions conflict, close other ADB tools and restart the selected server. `adb kill-server` disconnects other active ADB sessions; then run `adbwifiqr doctor`. For custom ADB paths, invoke that executable with `kill-server` instead. Never share private keys, pairing codes, or live QR credentials in bug reports.
 
 ## Update
 
-Reinstall from GitHub to get the latest version:
+Use the same prefix as your original installation:
 
 ```bash
-npm install -g --allow-git=all github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main"
+hash -r
+adbwifiqr --version
 ```
 
-If you used the user-owned prefix, keep using it:
+Omit `--prefix "$HOME/.local"` if you installed into npm's default global prefix. The app's settings persist. The updated command can replace an older GitHub-based installation in the same prefix.
 
-```bash
-npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
-```
+### Repeat a fresh-install test
 
-Then run `adbwifiqr doctor`. Your installed-command settings are outside the package directory, so reinstalling does not remove them.
-
-On npm 12, include `--allow-git=all` in either update command, as described under Install.
-
-## Uninstall
-
-For the default global prefix:
-
-```bash
-npm uninstall -g adbwifiqr
-```
-
-For the user-owned prefix:
+1. On Android, choose **Wireless debugging > Paired devices > this computer > Forget**.
+2. Uninstall from the same npm prefix used previously:
 
 ```bash
 npm uninstall -g --prefix "$HOME/.local" adbwifiqr
 ```
 
-On the phone, open **Wireless debugging > Paired devices**, select the computer, and tap **Forget**. Turn Wireless debugging off when finished. The settings folder remains unless you manually remove it. Separately installed Node.js, Git, and ADB remain installed.
+For the default global prefix, use `npm uninstall -g adbwifiqr` instead.
 
-## Run from source / development
+3. Run the installation commands above, confirm the version, and scan a fresh QR.
+4. Check `adbwifiqr devices` and `adb shell` before attempting a manual fallback if you are testing automatic connection.
 
-Global installation is optional. To edit the code or run the project without adding a global command:
+You do not need to delete private settings to retest pairing after forgetting the computer on Android. Uninstalling the npm package alone does not revoke phone authorization.
+
+## Development and verification
+
+Source checkout (Git is needed only for this method):
 
 ```bash
 git clone https://github.com/workwithmanish/adbwifiqr.git
 cd adbwifiqr
 npm ci --cache .npm-cache
+npm test
 npm start
 ```
 
-| Source command | Installed equivalent |
-| --- | --- |
-| `npm start` | `adbwifiqr` |
-| `npm run doctor` | `adbwifiqr doctor` |
-| `npm run pair` | `adbwifiqr pair` |
-| `npm run devices` | `adbwifiqr devices` |
-| `npm start -- connect IP:PORT` | `adbwifiqr connect IP:PORT` |
-| `npm start -- --help` | `adbwifiqr --help` |
+Source equivalents: `npm run doctor`, `npm run pair`, `npm run devices`, and `npm start -- connect IP:PORT`. Source commands default to the checkout's `.android/` settings unless `ADBWIFIQR_HOME` is set. Update a source clone with `git pull --ff-only` followed by `npm ci --cache .npm-cache`.
 
-The help screen uses installed command names; use this table if you work only from source. Source commands default to settings in the checkout's `.android/` folder, preserving the original development behavior. `ADBWIFIQR_HOME` overrides this too.
+The 42 tests cover CLI behavior, ADB failures, connection discovery, DNS parsing, exit codes, panel wrapping, and script-friendly version output. CI checks Node.js 22/24 and packaged installation across Linux, Windows, and macOS. npm 12 archive installs run with a test-only hook that throws on deprecated `url.parse()` calls; it does not hide warnings. Runtime tests also run with deprecations configured to fail.
 
-To update a source checkout:
+The direct discovery engine remains pinned to `node-dns-sd` 0.4.2. Changes to the presentation do not replace it. Packaging checks exclude Android keys, caches, and test fixtures from the npm-packed artifact. Source archives contain the public source checkout; private runtime data is ignored by Git and is not in the repository.
 
-```bash
-git pull --ff-only
-npm ci --cache .npm-cache
-npm run doctor
-```
+[Actions results](https://github.com/workwithmanish/adbwifiqr/actions) · [Real-device checklist](TESTING.md) · [Report an issue](https://github.com/workwithmanish/adbwifiqr/issues)
 
-Save local edits before updating; do not force Git to discard them. ZIP downloads must be updated by downloading a new ZIP instead.
+Automated pairing tests simulate ADB. They do not guarantee every phone/router combination. User-reported Kali testing confirmed QR pairing and manual `adb connect` followed by `adb shell`; automatic connection still depends on discovering the phone's connection service.
 
-```text
-bin/adbwifiqr.js    Installed terminal entry point
-src/cli.js         Commands, QR generation, discovery, pairing
-src/adb.js         ADB runner, environment, address parsing
-src/discovery.js   Direct network discovery with ADB fallback
-src/ui.js          Terminal interface
-test/              Automated tests
-.github/workflows/ Cross-platform CI
-```
+## Privacy and cleanup
 
-No build step is required. Validate changes with:
+Only debug devices you own or have permission to use, on trusted networks. QR credentials are generated in memory. Pairing codes are typed visibly; keep the screen private. Stopping this app does not revoke pairing or stop the shared ADB server.
 
-```bash
-npm test
-node bin/adbwifiqr.js --help
-npm pack --dry-run
-```
-
-GitHub Actions checks Node.js 22 and 24 on Linux, Windows, and macOS, including installing the packaged command and running its help screen. These checks do not pair real phones or verify your network. See the [Actions page](https://github.com/workwithmanish/adbwifiqr/actions) for actual results.
-
-## Reliability and supported environments
-
-The automated checks cover Node.js 22 and 24 on GitHub's Ubuntu, Windows, and macOS runners. npm 12 GitHub installation is checked on all three operating systems with its required per-command Git permission. Kali installation uses the documented prerequisites; the hosted Linux runner is Ubuntu, not Kali.
-
-The 40 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Discovery regressions cover empty/stalled ADB backends, unrelated pairing services, the real DNS parser, non-overlapping scans, and discovery cleanup. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
-
-QR discovery listens directly for the phone's `_adb-tls-pairing._tcp` service while querying ADB as a fallback. The first matching service wins; an empty ADB backend cannot block the direct discovery engine. `doctor` reports an empty ADB discovery status explicitly rather than printing a blank section. A real local UDP packet smoke test on an isolated test port is available with `node scripts/discovery-smoke.cjs`; it tests UDP reception and DNS parsing, not Android pairing or multicast reachability to your phone.
-
-The direct engine is pinned to `node-dns-sd` **0.4.2**. It queries `_adb-tls-pairing._tcp.local`, reads the response's `address` and `service.port`, and runs `adb pair` with the QR password. Quick discovery returns as soon as the matching QR instance is found. It does not require `adb mdns services` to work.
-
-Phone models, Android vendor changes, router isolation, VPNs, firewalls, VM networking, and user permissions can still cause issues. Passing automation does not guarantee every phone/network combination. Run `adbwifiqr doctor` after installation and use pairing-code mode if discovery is blocked. See [TESTING.md](TESTING.md) for real-device verification steps and the release checklist.
-
-For reproducible installation, you can replace `github:workwithmanish/adbwifiqr` with `github:workwithmanish/adbwifiqr#FULL_COMMIT_SHA` in the documented command. A full commit SHA selects that exact source revision; the unpinned command installs the current default branch.
-
-## Privacy
-
-Use this with devices you own or have permission to debug. QR credentials are generated in memory and are not saved by the app. Manual pairing codes are typed visibly, so keep the terminal private. Your installed command's Android home is described under Settings; dependencies and package files do not contain your pairing keys.
-
-Stopping this tool does not revoke completed pairing or stop the shared ADB server. Revoke access on the phone when needed. In a source checkout, `.android/`, npm cache, dependencies, downloaded Platform Tools, and environment files are ignored by Git. Global installation uses npm's normal cache unless you override it.
+To remove access, Forget the computer on Android and turn off Wireless debugging. Uninstall using the same prefix as installation. The settings folder and separately installed Node.js/ADB remain until you remove them yourself.
 
 ## References
 
 - [Android wireless debugging](https://developer.android.com/tools/adb#connect-to-a-device-over-wi-fi)
-- [Google Platform Tools downloads](https://developer.android.com/tools/releases/platform-tools)
+- [Google Platform Tools](https://developer.android.com/tools/releases/platform-tools)
 - [Node.js downloads](https://nodejs.org/en/download)
-- [npm installation documentation](https://docs.npmjs.com/cli/v11/commands/npm-install/)
-- [Homebrew Platform Tools](https://formulae.brew.sh/cask/android-platform-tools)
+- [Node.js DEP0169](https://nodejs.org/api/deprecations.html#dep0169-insecure-urlparse)
+- [npm Git clone implementation](https://github.com/npm/git/blob/main/lib/clone.js)
 
 Thanks for using ADB Wi-Fi QR. [GitHub · workwithmanish](https://github.com/workwithmanish)

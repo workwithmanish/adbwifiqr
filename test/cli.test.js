@@ -17,7 +17,8 @@ function run(args, scenario = 'normal') {
       env: { ...process.env, ADBWIFIQR_HOME: state, ADB_TEST_CASE: scenario, NO_COLOR: '1' },
     });
     assert.ifError(result.error);
-    return { status: result.status, output: result.stdout + result.stderr };
+    // Assertions concern the message, independent of box borders and wrapping.
+    return { status: result.status, output: (result.stdout + result.stderr).replace(/│/g, ' ').replace(/\s+/g, ' ') };
   } finally { rmSync(state, { recursive: true, force: true }); }
 }
 
@@ -65,7 +66,7 @@ test('successful connection shows the connected device', () => {
 test('devices handles an empty list clearly', () => {
   const result = run(['devices'], 'empty');
   assert.equal(result.status, 0);
-  assert.match(result.output, /No devices connected/);
+  assert.match(result.output, /No active ADB connection/);
 });
 test('code pairing explains that redirected input is unsupported', () => {
   const result = run(['pair']);
@@ -111,5 +112,5 @@ test('when the port is hidden, shows the known phone IP and only asks for the po
   const result = run([], 'port-hidden');
   assert.equal(result.status, 0);
   assert.match(result.output, /adb connect 192\.168\.1\.4:<PORT>/);
-  assert.match(result.output, /did not advertise a connection port/);
+  assert.match(result.output, /connection port could not be discovered/);
 });
