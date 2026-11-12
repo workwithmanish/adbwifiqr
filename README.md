@@ -23,21 +23,18 @@ This tool runs on your computer. You do not install it on the phone.
 On Kali (or Debian/Ubuntu), install the prerequisites:
 
 ```bash
-sudo apt update && sudo apt install -y nodejs npm adb && node --version
+sudo apt update && sudo apt install -y curl nodejs npm adb && node --version
 ```
 
 **Check the version before continuing:** it must be `v22` or newer. If it is older, follow the [Node.js LTS installation instructions](https://nodejs.org/en/download). If your ADB does not support `adb pair`, get [current Platform Tools](https://developer.android.com/tools/releases/platform-tools).
 
-Install the latest tool into your user's folder and start it:
+Install and start with one command:
 
 ```bash
-npm install -g --prefix "$HOME/.local" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main" &&
-export PATH="$HOME/.local/bin:$PATH" &&
-hash -r &&
-adbwifiqr
+curl -fsSL https://raw.githubusercontent.com/workwithmanish/adbwifiqr/main/install.sh | sh
 ```
 
-Run these project commands as your normal user; `sudo` is only needed for system packages. No Git installation or version tag is required. The install uses an HTTPS archive to avoid the deprecated URL parser in npm's Git-install path. No warnings are suppressed.
+The installer detects Bash, Zsh, or Fish, installs into your user folder, configures PATH automatically, and launches the tool immediately. It preserves existing shell settings, backs up nonempty startup files before the first edit, and avoids duplicate entries on repeat installs. No manual `export`, shell-file editing, or version tag is needed. Run as your normal user; `sudo` is only needed for system packages. HTTPS archive installation avoids npm's deprecated Git URL parser without suppressing warnings.
 
 ### 2. Scan the QR on Android
 
@@ -84,15 +81,16 @@ adbwifiqr
 If the phone is still paired, you can use its current connection address with the step 3 block instead of pairing again.
 
 <details>
-<summary><strong>Keep the command available after restarting your terminal</strong></summary>
+<summary><strong>What does automatic shell setup change?</strong></summary>
 
-The installation block sets PATH for the current terminal. Add this line **once** to `~/.zshrc` for zsh (usual on Kali) or `~/.bashrc` for Bash, then reopen the terminal:
+- **Zsh:** adds a managed PATH block to `.zshrc` and `.zprofile`; respects `ZDOTDIR`.
+- **Bash:** configures `.bashrc` and the login file Bash already uses (`.bash_profile`, `.bash_login`, or `.profile`).
+- **Fish:** adds a small `conf.d/adbwifiqr.fish` file.
+- Existing content is preserved. Initial nonempty-file backups use the `.adbwifiqr.bak` suffix. Reinstalling replaces the tool's own block rather than adding copies.
 
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
+The installer starts the tool immediately using its full path. It also adds a command link to a writable directory already on PATH when possible, so the current terminal can use `adbwifiqr` too. Otherwise the saved PATH applies to new terminals; other already-open tabs may need reopening. A child installer cannot change the environment of its parent terminal.
 
-Run `echo "$SHELL"` if you are unsure which shell you use. If the command is missing in a new terminal, run the PATH line there and check your shell configuration.
+To install without launching the QR session, download `install.sh`, inspect it if desired, and run `sh install.sh --no-launch`. Node.js 22+, npm, and ADB must already be installed. Unknown shells produce a clear error rather than modifying an unrelated startup file.
 
 </details>
 
@@ -128,16 +126,13 @@ Use a trusted network that allows devices to communicate. Guest networks, VPNs, 
 
 ## Update
 
-Use the same prefix you installed with. For the recommended Linux/macOS setup, update and check the version in one block:
+Run the same installer again. It updates the package, keeps shell configuration free of duplicates, and starts the tool:
 
 ```bash
-npm install -g --prefix "$HOME/.local" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/heads/main" &&
-export PATH="$HOME/.local/bin:$PATH" &&
-hash -r &&
-adbwifiqr --version
+curl -fsSL https://raw.githubusercontent.com/workwithmanish/adbwifiqr/main/install.sh | sh
 ```
 
-If you installed into npm's default global location, omit `--prefix "$HOME/.local"`. The latest installation does not need a version tag. Android settings and keys persist across updates.
+Android settings and keys persist. No version tag is needed. To check the installed version later, run `adbwifiqr --version`. If you previously used another npm prefix, that older installation is not deleted automatically; the user-local installation is placed first in future terminals.
 
 <details>
 <summary><strong>Fresh-install testing and uninstalling</strong></summary>
@@ -194,7 +189,7 @@ If you use [Homebrew](https://brew.sh/), install prerequisites:
 brew install node && brew install --cask android-platform-tools
 ```
 
-Alternatively, use the official Node.js and Platform Tools downloads. Then paste the **Install the latest tool** block from step 1. The QR and shell steps are the same as Linux. Add the PATH line to your shell configuration, usually `~/.zshrc`.
+Alternatively, use the official Node.js and Platform Tools downloads. Then run the one-command installer from step 1. The QR and shell steps are the same as Linux; shell/PATH configuration is automatic.
 
 </details>
 
@@ -212,7 +207,7 @@ On Windows use `$env:ADB_PATH = 'C:\your\path\platform-tools\adb.exe'`. For dire
 
 The installed command stores private settings/keys under `~/.adbwifiqr/.android` or `%USERPROFILE%\.adbwifiqr\.android`. `ADBWIFIQR_HOME` can select another writable directory. ADB is a shared background server; an existing instance may retain its original settings. Restarting it with `adb kill-server` disconnects other ADB sessions, so close other ADB tools first if you need to resolve a conflict.
 
-For a fixed release, replace `refs/heads/main` in the installation URL with `refs/tags/v1.4.0`. Tags are optional; the normal command gets the latest code. The project is distributed through GitHub, not the npm registry.
+The current release is **1.5.0**. For a fixed manual npm installation, use the archive URL `https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/refs/tags/v1.5.0`. Manual npm installation does not run the shell setup helper; the one-command installer does. Tags are optional; the normal command gets the latest code. The project is distributed through GitHub, not the npm registry.
 
 Manual address prompts accept IPv4. They do not support IPv6-only networks. Use a Unicode-capable terminal and monospaced font. `NO_COLOR=1 adbwifiqr` disables text colors without suppressing errors or warnings.
 
@@ -233,7 +228,7 @@ npm start
 
 Source equivalents include `npm run doctor`, `npm run pair`, `npm run devices`, and `npm start -- connect IP:PORT`. Source commands default to the checkout's `.android/` directory unless `ADBWIFIQR_HOME` is set.
 
-The 42 tests cover commands, ADB errors, discovery, DNS parsing, connection states, and UI formatting. CI checks Node 22/24 and packaged installation on Linux, Windows, and macOS. Archive-install checks fail if npm invokes deprecated `url.parse()`; warnings are not hidden. Pairing tests simulate ADB, so real-phone and network verification still matter. The direct discovery library is pinned to `node-dns-sd` 0.4.2.
+The 50 tests cover commands, ADB errors, discovery, DNS parsing, connection states, and UI formatting. CI checks Node 22/24 and packaged installation on Linux, Windows, and macOS. Archive-install checks fail if npm invokes deprecated `url.parse()`; warnings are not hidden. Pairing tests simulate ADB, so real-phone and network verification still matter. The direct discovery library is pinned to `node-dns-sd` 0.4.2.
 
 [Actions results](https://github.com/workwithmanish/adbwifiqr/actions) · [Real-device checklist](TESTING.md)
 

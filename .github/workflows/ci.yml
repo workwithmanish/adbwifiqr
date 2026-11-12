@@ -33,7 +33,7 @@ jobs:
       - run: node --check src/ui.js
       - run: npm pack
       - run: node scripts/check-package.cjs
-      - run: npm install --global --prefix "${{ runner.temp }}/adbwifiqr-cli" ./adbwifiqr-1.4.0.tgz
+      - run: npm install --global --prefix "${{ runner.temp }}/adbwifiqr-cli" ./adbwifiqr-1.5.0.tgz
       - name: Check installed command (Linux and macOS)
         if: runner.os != 'Windows'
         run: '"${{ runner.temp }}/adbwifiqr-cli/bin/adbwifiqr" --help'
@@ -65,3 +65,31 @@ jobs:
       - if: runner.os == 'Windows'
         shell: pwsh
         run: '& "${{ runner.temp }}/adbwifiqr-cli-npm12/adbwifiqr.cmd" --help'
+
+  installer:
+    name: Auto shell setup / ${{ matrix.os }} / ${{ matrix.shell }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        shell: [bash, zsh]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Install and verify a fresh terminal
+        shell: bash
+        run: |
+          sh -n install.sh
+          export HOME="$RUNNER_TEMP/adbwifiqr-installer-${{ matrix.shell }}"
+          mkdir -p "$HOME"
+          unset ZDOTDIR
+          export SHELL="$(command -v ${{ matrix.shell }})"
+          "$SHELL" -c 'sh install.sh --no-launch'
+          "$SHELL" -c 'sh install.sh --no-launch'
+          "$SHELL" -ic 'command -v adbwifiqr && adbwifiqr --version'
+          "$SHELL" -lic 'command -v adbwifiqr && adbwifiqr --version'

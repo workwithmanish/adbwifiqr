@@ -9,7 +9,7 @@ The workflow checks:
 - Node.js 22 and 24 on Ubuntu, Windows, and macOS.
 - A packaged global installation, executable entry point, and help command on each platform.
 - Actual HTTPS archive installation using npm 12 on all three operating systems.
-- Package contents: exactly the intended seven application files, with no Android keys, caches, test fixtures, or dependencies bundled in the archive.
+- Package contents: exactly the intended eight application files, with no Android keys, caches, test fixtures, or dependencies bundled in the archive.
 - Argument handling, exit codes, environment configuration, pairing flow, and actionable failure messages.
 
 Run results: https://github.com/workwithmanish/adbwifiqr/actions
