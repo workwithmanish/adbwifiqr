@@ -29,3 +29,12 @@ jobs:
       - run: node --check src/cli.js
       - run: node --check src/adb.js
       - run: node --check src/ui.js
+      - run: npm pack
+      - run: npm install --global --prefix "${{ runner.temp }}/adbwifiqr-cli" ./adbwifiqr-1.1.0.tgz
+      - name: Check installed command (Linux and macOS)
+        if: runner.os != 'Windows'
+        run: '"${{ runner.temp }}/adbwifiqr-cli/bin/adbwifiqr" --help'
+      - name: Check installed command (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& "${{ runner.temp }}/adbwifiqr-cli/adbwifiqr.cmd" --help'

@@ -1,7 +1,9 @@
 {
   "name": "adbwifiqr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
+  "bin": { "adbwifiqr": "bin/adbwifiqr.js" },
+  "files": ["bin/", "src/", "README.md"],
   "description": "Beginner-friendly Android wireless debugging pairing",
   "author": "workwithmanish",
   "repository": { "type": "git", "url": "https://github.com/workwithmanish/adbwifiqr.git" },

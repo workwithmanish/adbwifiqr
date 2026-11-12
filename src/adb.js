@@ -2,6 +2,7 @@ const { execFile } = require('node:child_process');
 const { mkdirSync } = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+const stateRoot = process.env.ADBWIFIQR_HOME ? path.resolve(process.env.ADBWIFIQR_HOME) : root;
 
 function adbEnvironment(projectRoot, base = process.env, platform = process.platform) {
   const paths = platform === 'win32' ? path.win32 : path.posix;
@@ -17,14 +18,14 @@ function adbEnvironment(projectRoot, base = process.env, platform = process.plat
 }
 
 function adb(args) {
-  const home = path.join(root, '.android');
+  const home = path.join(stateRoot, '.android');
   mkdirSync(home, { recursive: true });
   return new Promise((resolve, reject) => {
     execFile(process.env.ADB_PATH || 'adb', args, {
       cwd: root,
       windowsHide: true,
       timeout: 20000,
-      env: adbEnvironment(root),
+      env: adbEnvironment(stateRoot),
     }, (error, stdout, stderr) => {
       if (error) {
         reject(new Error(error.code === 'ENOENT'

@@ -6,3 +6,6 @@ platform-tools/
 platform-tools*.zip
 .env
 .env.*
+.cli-test/
+.package-test/
+*.tgz

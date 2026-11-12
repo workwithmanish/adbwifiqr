@@ -32,10 +32,10 @@ async function main() {
   ui.header(({ qr: 'QR PAIRING', doctor: 'SETUP CHECK', pair: 'CODE PAIRING', devices: 'YOUR DEVICES' })[command] || 'QUICK HELP');
   if (['--help', '-h', 'help'].includes(command)) {
     ui.section('COMMANDS');
-    ui.block('npm start                     Pair with a QR code\nnpm run doctor                Check your setup\nnpm run pair                  Pair with a six-digit code\nnpm run devices               Show connected devices\nnpm start -- connect IP:PORT  Connect a paired phone');
+    ui.block('adbwifiqr                  Pair with a QR code\nadbwifiqr doctor           Check your setup\nadbwifiqr pair             Pair with a six-digit code\nadbwifiqr devices          Show connected devices\nadbwifiqr connect IP:PORT  Connect a paired phone\nadbwifiqr --help           Show commands');
     return;
   }
-  if (!['qr', 'doctor', 'pair', 'devices'].includes(command)) throw new Error('Unknown command. Use npm start -- --help.');
+  if (!['qr', 'doctor', 'pair', 'devices'].includes(command)) throw new Error('Unknown command. Use adbwifiqr --help (or npm start -- --help in a source checkout).');
   if (command === 'devices') return ui.devices(await adb(['devices', '-l']));
   const version = await adb(['version']);
   ui.success('ADB ready' + (command === 'doctor' ? '  ·  ' + (version.split(/\r?\n/).find(line => line.startsWith('Version ')) || version.split(/\r?\n/)[0]) : ''));
@@ -61,7 +61,7 @@ async function main() {
     console.log(code.split('\n').map(line => '    ' + line).join('\n'));
   });
   ui.info('Scan in Wireless debugging. Keep this code private.');
-  ui.info('Ctrl+C stop  ·  npm run pair use a pairing code');
+  ui.info('Ctrl+C stop  ·  adbwifiqr pair use a pairing code');
   console.log();
   let stopWaiting = ui.spinner('Waiting for phone · 3 min limit');
   try {
@@ -89,12 +89,12 @@ async function main() {
       ui.devices(await adb(['devices', '-l']));
       ui.section('NEXT STEP');
       ui.info('If disconnected, use the main Wireless debugging IP and port:');
-      ui.block('npm start -- connect <IP:PORT>');
+      ui.block('adbwifiqr connect <IP:PORT>');
       return;
     }
     await delay(2000);
   }
-  throw new Error('No matching phone paired in time. Try npm run pair. Check Wi-Fi, VPN, and firewall settings.');
+  throw new Error('No matching phone paired in time. Try adbwifiqr pair (or npm run pair in a source checkout). Check Wi-Fi, VPN, and firewall settings.');
   } finally { stopWaiting(); }
 }
 
