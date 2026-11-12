@@ -8,17 +8,13 @@ A minimal terminal tool for Android wireless debugging: scan a QR, pair with a s
 
 ## Install
 
-Install directly from GitHub:
-
-```bash
-npm install -g github:workwithmanish/adbwifiqr
-```
-
-**npm 12 or `EALLOWGIT`?** Newer npm versions block Git downloads by default. Explicitly allow Git fetching for this installation only:
+Install the latest code directly from GitHub (no version tag required):
 
 ```bash
 npm install -g --allow-git=all github:workwithmanish/adbwifiqr
 ```
+
+The `--allow-git=all` flag handles npm 12's Git-download restriction and the `EALLOWGIT` error. It applies to this command only.
 
 If using the user-owned prefix recommended for Kali/macOS:
 
@@ -38,6 +34,16 @@ adbwifiqr
 Each screen displays the app version. The current version is **1.3.2**. If you still see the old interface after reinstalling, run `adbwifiqr --version` and check for another installation with `type -a adbwifiqr` on Linux/macOS or `Get-Command adbwifiqr -All` on PowerShell. Reopen your terminal after correcting PATH.
 
 No cloning or `npm start` is required for normal use. This package is distributed through GitHub and is **not published to the npm registry**. Use the complete GitHub install command above, not `npm install -g adbwifiqr` or `npx adbwifiqr`. The npm client downloads it from GitHub and creates the `adbwifiqr` terminal command.
+
+### Do I need `#v1.3.2`?
+
+**No.** The command without a tag installs the latest code from the repository's default branch. A tag is optional and selects a fixed release for repeatable testing:
+
+```bash
+npm install -g --allow-git=all "github:workwithmanish/adbwifiqr#v1.3.2"
+```
+
+Use the tag-free commands below for normal installation and updates. Add the same `--prefix` option if you install into a user-owned location.
 
 ### Requirements
 
@@ -67,12 +73,13 @@ adb help
 
 Node must report `v22` or newer. ADB help must include `pair`. Version 1.3.0 uses node-dns-sd 0.4.2 for direct network discovery, so an empty or unavailable ADB mDNS backend does not by itself prevent QR pairing. Versions depend on your repositories. If Node is too old, follow the [official Node.js download instructions](https://nodejs.org/en/download) to install a supported LTS version. If ADB is too old, install [Google's current Platform Tools](https://developer.android.com/tools/releases/platform-tools) and use the [custom ADB path](#custom-adb-path) below.
 
-Configure a user-owned npm installation location so no `sudo npm` is needed:
+For a fresh installation, use this user-owned npm location so no `sudo npm` is needed. The command installs the latest code without a version tag:
 
 ```bash
 mkdir -p "$HOME/.local"
-npm install -g --prefix "$HOME/.local" github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
 export PATH="$HOME/.local/bin:$PATH"
+adbwifiqr --version
 adbwifiqr doctor
 adbwifiqr
 ```
@@ -83,7 +90,35 @@ The `export` applies to this terminal. To make it permanent, add this line once 
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Run `echo "$SHELL"` if you are unsure which shell you use. Do not run this tool with sudo. If a Node version manager already provides a writable global npm prefix, the shorter `npm install -g github:workwithmanish/adbwifiqr` command also works.
+Run `echo "$SHELL"` if you are unsure which shell you use. Do not run this tool with sudo. If a Node version manager already provides a writable global npm prefix, the shorter `npm install -g --allow-git=all github:workwithmanish/adbwifiqr` command also works.
+
+#### Repeat a fresh-install test on Kali
+
+New users can skip this section. To retest installation and pairing from scratch:
+
+1. On Android, open **Wireless debugging > Paired devices**, select this computer, and tap **Forget**. Uninstalling the npm package alone does not revoke pairing.
+2. Uninstall from the **same npm prefix used for your previous installation**. For the user-owned prefix above:
+
+```bash
+npm uninstall -g --prefix "$HOME/.local" adbwifiqr
+```
+
+If you originally installed into npm's default global prefix instead, use `npm uninstall -g adbwifiqr` from that same account/environment.
+
+3. Install the latest code and reset the shell's command cache:
+
+```bash
+npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
+export PATH="$HOME/.local/bin:$PATH"
+hash -r
+adbwifiqr --version
+adbwifiqr doctor
+adbwifiqr
+```
+
+4. Scan the newly generated QR using Android's Wireless debugging scanner. Then run `adbwifiqr devices` and `adb shell`. If automatic connection fails, follow the exact connection guidance printed by the tool.
+
+The private settings folder remains after uninstalling; you do not need to delete it for a fresh pairing test once the phone has forgotten the computer. If the version remains old, run `type -a adbwifiqr` to find duplicate commands and correct PATH.
 
 **Kali in VirtualBox/VMware:** the VM must reach the phone directly. Bridged networking is often needed for multicast discovery; NAT may block it even when internet access works. If the phone is reachable but discovery fails, use `adbwifiqr pair`.
 
@@ -100,7 +135,7 @@ $env:ADB_PATH = 'C:\path\to\platform-tools\adb.exe'
 Replace the example path before running it. Install and start:
 
 ```powershell
-npm install -g github:workwithmanish/adbwifiqr
+npm install -g --allow-git=all github:workwithmanish/adbwifiqr
 adbwifiqr doctor
 adbwifiqr
 ```
@@ -122,7 +157,7 @@ Install the command in a user-owned location:
 
 ```bash
 mkdir -p "$HOME/.local"
-npm install -g --prefix "$HOME/.local" github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
 export PATH="$HOME/.local/bin:$PATH"
 adbwifiqr doctor
 adbwifiqr
@@ -341,13 +376,13 @@ For help, [open an issue](https://github.com/workwithmanish/adbwifiqr/issues) wi
 Reinstall from GitHub to get the latest version:
 
 ```bash
-npm install -g github:workwithmanish/adbwifiqr
+npm install -g --allow-git=all github:workwithmanish/adbwifiqr
 ```
 
 If you used the user-owned prefix, keep using it:
 
 ```bash
-npm install -g --prefix "$HOME/.local" github:workwithmanish/adbwifiqr
+npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
 ```
 
 Then run `adbwifiqr doctor`. Your installed-command settings are outside the package directory, so reinstalling does not remove them.
