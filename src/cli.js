@@ -38,7 +38,7 @@ async function main() {
   if (!['qr', 'doctor', 'pair', 'devices'].includes(command)) throw new Error('Unknown command. Use npm start -- --help.');
   if (command === 'devices') return ui.devices(await adb(['devices', '-l']));
   const version = await adb(['version']);
-  ui.success(version.split(/\r?\n/).find(line => line.startsWith('Version ')) || version.split(/\r?\n/)[0]);
+  ui.success('ADB ready' + (command === 'doctor' ? '  ·  ' + (version.split(/\r?\n/).find(line => line.startsWith('Version ')) || version.split(/\r?\n/)[0]) : ''));
   if (command === 'doctor') {
     ui.section('NETWORK DISCOVERY');
     ui.block(await adb(['mdns', 'check']));
@@ -52,15 +52,18 @@ async function main() {
   if (command === 'pair') return manual();
   const name = 'ADB_WIFI_' + randomBytes(8).toString('hex');
   const password = randomBytes(16).toString('hex');
-  ui.section('READY TO CONNECT');
+  ui.section('SET UP YOUR PHONE');
   ui.step(1, 'Put your phone and PC on the same trusted Wi-Fi.');
   ui.step(2, 'Phone: Settings > Developer options > Wireless debugging.');
   ui.step(3, 'Enable it, then tap Pair device with QR code.');
   ui.section('SCAN WITH YOUR PHONE');
-  qr.generate(`WIFI:T:ADB;S:${name};P:${password};;`, { small: true });
-  ui.info('Keep this QR private. Use the Wireless debugging scanner.');
-  ui.info('Ctrl+C to stop  |  Code fallback: npm run pair\n');
-  let stopWaiting = ui.spinner('Waiting for your phone (up to 3 minutes)');
+  qr.generate(`WIFI:T:ADB;S:${name};P:${password};;`, { small: true }, code => {
+    console.log(code.split('\n').map(line => '    ' + line).join('\n'));
+  });
+  ui.info('Scan in Wireless debugging. Keep this code private.');
+  ui.info('Ctrl+C stop  ·  npm run pair use a pairing code');
+  console.log();
+  let stopWaiting = ui.spinner('Waiting for phone · 3 min limit');
   try {
   const deadline = Date.now() + 180000;
   const attempts = new Map();
