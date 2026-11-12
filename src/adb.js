@@ -19,7 +19,11 @@ function adbEnvironment(projectRoot, base = process.env, platform = process.plat
 
 function adb(args) {
   const home = path.join(stateRoot, '.android');
-  mkdirSync(home, { recursive: true });
+  try {
+    mkdirSync(home, { recursive: true, mode: 0o700 });
+  } catch {
+    return Promise.reject(new Error('Cannot write Android settings. Set ADBWIFIQR_HOME to a directory owned by your user.'));
+  }
   return new Promise((resolve, reject) => {
     execFile(process.env.ADB_PATH || 'adb', args, {
       cwd: root,
@@ -28,12 +32,24 @@ function adb(args) {
       env: adbEnvironment(stateRoot),
     }, (error, stdout, stderr) => {
       if (error) {
+        const detail = stderr.trim() || stdout.trim() || error.message;
         reject(new Error(error.code === 'ENOENT'
-          ? 'ADB was not found. See the Platform Tools setup in README.md.'
-          : (stderr.trim() || stdout.trim() || error.message)));
+          ? 'ADB was not found. Install Android Platform Tools and set ADB_PATH to the full adb executable path.'
+          : error.code === 'EACCES' || error.code === 'EPERM'
+            ? 'ADB cannot be executed. Check ADB_PATH and executable permissions; do not run the tool with sudo.'
+            : error.killed
+              ? 'ADB did not respond within 20 seconds. Check your phone/network and run adbwifiqr doctor.'
+              : detail));
       } else resolve(stdout.trim());
     });
   });
+}
+
+function connectionResult(output) {
+  if (!/^(?:already )?connected to\s+/im.test(output)) {
+    throw new Error(`${output || 'ADB did not confirm a connection.'}\nUse the connection port from the main Wireless debugging screen, not the pairing port.`);
+  }
+  return output;
 }
 
 function services(output) {
@@ -51,4 +67,4 @@ function endpoint(value) {
   return value;
 }
 
-module.exports = { adb, services, endpoint, adbEnvironment };
+module.exports = { adb, services, endpoint, adbEnvironment, connectionResult };

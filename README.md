@@ -210,6 +210,7 @@ These commands work from any directory after global installation:
 | `adbwifiqr devices` | Show devices and connection states |
 | `adbwifiqr connect IP:PORT` | Connect an already-paired phone |
 | `adbwifiqr --help` | Show commands |
+| `adbwifiqr --version` | Show the installed version without needing ADB |
 
 ### Custom ADB path
 
@@ -374,6 +375,16 @@ npm pack --dry-run
 ```
 
 GitHub Actions checks Node.js 22 and 24 on Linux, Windows, and macOS, including installing the packaged command and running its help screen. These checks do not pair real phones or verify your network. See the [Actions page](https://github.com/workwithmanish/adbwifiqr/actions) for actual results.
+
+## Reliability and supported environments
+
+The automated checks cover Node.js 22 and 24 on GitHub's Ubuntu, Windows, and macOS runners. npm 12 GitHub installation is checked on all three operating systems with its required per-command Git permission. Kali installation uses the documented prerequisites; the hosted Linux runner is Ubuntu, not Kali.
+
+The 21 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
+
+Phone models, Android vendor changes, router isolation, VPNs, firewalls, VM networking, and user permissions can still cause issues. Passing automation does not guarantee every phone/network combination. Run `adbwifiqr doctor` after installation and use pairing-code mode if discovery is blocked. See [TESTING.md](TESTING.md) for real-device verification steps and the release checklist.
+
+For reproducible installation, you can replace `github:workwithmanish/adbwifiqr` with `github:workwithmanish/adbwifiqr#FULL_COMMIT_SHA` in the documented command. A full commit SHA selects that exact source revision; the unpinned command installs the current default branch.
 
 ## Privacy
 

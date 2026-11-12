@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { services, endpoint, adbEnvironment } = require('../src/adb');
+const { services, endpoint, adbEnvironment, connectionResult } = require('../src/adb');
 
 test('reads only pairing and connection mDNS rows', () => {
   assert.deepEqual(services('List of discovered mdns services\nADB_WIFI_test\t_adb-tls-pairing._tcp.\t192.168.1.4:43210\nother _adb-tls-connect._tcp 192.168.1.4:43211\nnoise'), [
@@ -35,4 +35,10 @@ test('Windows uses a project-local drive, profile, and Android home', () => {
   assert.equal(env.USERPROFILE, 'D:\\adbwifiqr');
   assert.equal(env.ANDROID_USER_HOME, 'D:\\adbwifiqr\\.android');
   assert.equal(env.PATH, 'existing-path');
+});
+
+test('connect accepts existing connections and rejects ADB failure text', () => {
+  assert.equal(connectionResult('already connected to 192.168.1.5:12345'), 'already connected to 192.168.1.5:12345');
+  assert.throws(() => connectionResult('failed to connect to 192.168.1.5:12345'), /main Wireless debugging screen/);
+  assert.throws(() => connectionResult(''), /did not confirm/);
 });
