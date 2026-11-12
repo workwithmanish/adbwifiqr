@@ -29,13 +29,27 @@ async function connectPairedPhone(pairingAddress, runAdb, scanner = dnsSd) {
     const [serial, state] = line.trim().split(/\s+/);
     return state === 'device' && endpointHost(serial) === host;
   });
-  if (hasConnection(output)) return { output, connected: true };
-  const targets = await discoverConnections(host, scanner);
-  const target = targets.find(service => endpointHost(service.address) === host);
-  if (!target) return { output, connected: false };
-  connectionResult(await runAdb(['connect', target.address]));
-  const current = await runAdb(['devices', '-l']);
-  return { output: current, connected: hasConnection(current) };
+  if (hasConnection(output)) {
+    const address = output.split(/\r?\n/).map(line => line.trim().split(/\s+/))
+      .find(([serial, state]) => state === 'device' && endpointHost(serial) === host)[0];
+    return { output, connected: true, address, host };
+  }
+  let failure;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let targets;
+    try { targets = await discoverConnections(host, scanner); }
+    catch (error) { failure = error.message; continue; }
+    const target = targets.find(service => endpointHost(service.address) === host);
+    if (!target) continue;
+    try {
+      connectionResult(await runAdb(['connect', target.address]));
+      const current = await runAdb(['devices', '-l']);
+      return { output: current, connected: hasConnection(current), address: target.address, host };
+    } catch (error) {
+      return { output, connected: false, address: target.address, host, error: error.message };
+    }
+  }
+  return { output, connected: false, host, error: failure };
 }
 
 async function discoverConnections(host, scanner = dnsSd) {

@@ -105,3 +105,29 @@ test('an unrelated connected device does not count as the paired phone', async (
     'List of devices attached\n192.168.1.99:50123 device', { discover: async () => [] });
   assert.equal(result.connected, false);
 });
+
+test('retains the dynamic IP and port when connecting fails', async () => {
+  const result = await connectPairedPhone('192.168.1.8:40123', async args => {
+    if (args[0] === 'connect') return 'failed to connect: Connection refused';
+    return 'List of devices attached';
+  }, { discover: async () => [{ ...phone, fqdn: 'adb-guid._adb-tls-connect._tcp.local', service: { port: 45678 } }] });
+  assert.equal(result.connected, false);
+  assert.equal(result.address, '192.168.1.8:45678');
+  assert.match(result.error, /Connection refused/);
+});
+
+test('retries discovery when Android publishes the connection port later', async () => {
+  let scans = 0;
+  const result = await connectPairedPhone('192.168.1.8:40123', async args => args[0] === 'connect'
+    ? 'connected to 192.168.1.8:45678' : 'List of devices attached', {
+    discover: async () => ++scans < 3 ? [] : [{ ...phone, fqdn: 'adb-guid._adb-tls-connect._tcp.local', service: { port: 45678 } }],
+  });
+  assert.equal(scans, 3);
+  assert.equal(result.address, '192.168.1.8:45678');
+});
+
+test('an undiscoverable port stays unknown instead of reusing the pairing port', async () => {
+  const result = await connectPairedPhone('192.168.1.8:40123', async () => 'List of devices attached', { discover: async () => [] });
+  assert.equal(result.host, '192.168.1.8');
+  assert.equal(result.address, undefined);
+});

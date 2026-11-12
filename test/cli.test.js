@@ -99,3 +99,17 @@ test('Kali regression: pairing is followed by direct discovery of the connection
   assert.match(result.output, /Test Phone/);
   assert.doesNotMatch(result.output, /active connection is still pending/);
 });
+
+test('prints the exact dynamic connection command even if auto-connect is refused', () => {
+  const result = run([], 'connect-refused');
+  assert.equal(result.status, 0);
+  assert.match(result.output, /adb connect 192\.168\.1\.4:50123/);
+  assert.doesNotMatch(result.output, /adb connect 192\.168\.1\.4:40124/);
+});
+
+test('when the port is hidden, shows the known phone IP and only asks for the port', () => {
+  const result = run([], 'port-hidden');
+  assert.equal(result.status, 0);
+  assert.match(result.output, /adb connect 192\.168\.1\.4:<PORT>/);
+  assert.match(result.output, /did not advertise a connection port/);
+});

@@ -106,14 +106,29 @@ async function main() {
       finally { stopConnecting(); }
       if (connection?.connected) {
         ui.success('Phone connected.');
+        ui.info('Connection address: ' + connection.address);
         ui.devices(connection.output);
+        ui.section('OPEN A SHELL');
+        ui.block('adb shell');
         return;
       }
       if (connection) ui.devices(connection.output);
       ui.section('NEXT STEP');
       ui.info('Your phone is paired; the active connection is still pending.');
-      ui.info('Use the IP and connection port on the main Wireless debugging screen:');
-      ui.block('adbwifiqr connect <IP:PORT>');
+      if (connection?.address) {
+        ui.info('Detected connection address: ' + connection.address);
+        if (connection.error) ui.warning(connection.error);
+        ui.block('adb connect ' + connection.address);
+        ui.block('adb shell');
+      } else {
+        const host = connection?.host || service.address.replace(/:\d+$/, '');
+        ui.info('Phone IP detected: ' + host);
+        ui.info('Android did not advertise a connection port that this computer could discover.');
+        ui.info('Read only the connection port on the main Wireless debugging page.');
+        ui.info('Replace <PORT> below with that number:');
+        ui.block(`adb connect ${host}:<PORT>`);
+        ui.block('adb shell');
+      }
       return;
     }
     if (service) await delay(500);
