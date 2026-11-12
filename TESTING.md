@@ -9,10 +9,12 @@ The workflow checks:
 - Node.js 22 and 24 on Ubuntu, Windows, and macOS.
 - A packaged global installation, executable entry point, and help command on each platform.
 - Actual GitHub installation using npm 12 on all three operating systems.
-- Package contents: exactly the intended six application files, with no Android keys, caches, test fixtures, or dependencies bundled in the archive.
+- Package contents: exactly the intended seven application files, with no Android keys, caches, test fixtures, or dependencies bundled in the archive.
 - Argument handling, exit codes, environment configuration, pairing flow, and actionable failure messages.
 
 Run results: https://github.com/workwithmanish/adbwifiqr/actions
+
+Version 1.2.0 also tests direct discovery with an empty or stalled ADB backend, rejects unrelated service names, and checks listener cleanup. Run `node scripts/discovery-smoke.cjs` for an optional real local UDP multicast test. It advertises a local test service; it does not contact or pair a phone. Multicast access must be permitted by the host network and firewall.
 
 ## Real-device checks
 

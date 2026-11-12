@@ -2,6 +2,20 @@
 const childProcess = require('node:child_process');
 const crypto = require('node:crypto');
 crypto.randomBytes = size => Buffer.alloc(size, 0xab);
+const { EventEmitter } = require('node:events');
+require('bonjour-service').Bonjour = class {
+  constructor(options, onError) {
+    if (process.env.ADB_TEST_CASE === 'discovery-failure') setImmediate(() => onError(new Error('multicast unavailable')));
+  }
+  find(options, onService) {
+    if (process.env.ADB_TEST_CASE === 'direct-only') {
+      setImmediate(() => onService({ name: 'ADB_WIFI_' + 'ab'.repeat(8),
+        type: 'adb-tls-pairing', protocol: 'tcp', port: 40124, addresses: ['192.168.1.4'] }));
+    }
+    return Object.assign(new EventEmitter(), { update() {}, stop() {} });
+  }
+  destroy() {}
+};
 childProcess.execFile = (file, args, options, callback) => {
   const scenario = process.env.ADB_TEST_CASE;
   if (scenario === 'must-not-run') throw new Error('Unexpected ADB call');
@@ -21,6 +35,7 @@ childProcess.execFile = (file, args, options, callback) => {
   else if (args[0] === 'pair') output = 'Successfully paired to ' + args[1];
   else if (args.join(' ') === 'mdns check') output = 'mdns daemon version [test]';
   else if (args.join(' ') === 'mdns services') {
+    if (scenario === 'direct-only') { setImmediate(() => callback(null, '', '')); return; }
     if (scenario === 'discovery-failure') {
       setImmediate(() => callback(new Error('unknown command mdns'), '', 'unknown command mdns'));
       return;

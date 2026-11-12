@@ -84,3 +84,10 @@ test('QR flow discovers its matching service and confirms pairing', () => {
   assert.match(result.output, /Pairing complete/);
   assert.match(result.output, /Test Phone/);
 });
+
+test('Kali regression: QR pairs using direct discovery when ADB mDNS is empty', () => {
+  const result = run([], 'direct-only');
+  assert.equal(result.status, 0);
+  assert.match(result.output, /Phone discovered/);
+  assert.match(result.output, /Pairing complete/);
+});

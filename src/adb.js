@@ -17,7 +17,7 @@ function adbEnvironment(projectRoot, base = process.env, platform = process.plat
   return env;
 }
 
-function adb(args) {
+function adb(args, { timeout = 20000 } = {}) {
   const home = path.join(stateRoot, '.android');
   try {
     mkdirSync(home, { recursive: true, mode: 0o700 });
@@ -28,7 +28,7 @@ function adb(args) {
     execFile(process.env.ADB_PATH || 'adb', args, {
       cwd: root,
       windowsHide: true,
-      timeout: 20000,
+      timeout,
       env: adbEnvironment(stateRoot),
     }, (error, stdout, stderr) => {
       if (error) {
@@ -38,7 +38,7 @@ function adb(args) {
           : error.code === 'EACCES' || error.code === 'EPERM'
             ? 'ADB cannot be executed. Check ADB_PATH and executable permissions; do not run the tool with sudo.'
             : error.killed
-              ? 'ADB did not respond within 20 seconds. Check your phone/network and run adbwifiqr doctor.'
+              ? `ADB did not respond within ${timeout / 1000} seconds. Check your phone/network and run adbwifiqr doctor.`
               : detail));
       } else resolve(stdout.trim());
     });

@@ -3,6 +3,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const readline = require('node:readline/promises');
 const qr = require('qrcode-terminal');
 const { adb, services, endpoint, connectionResult } = require('./adb');
+const { createDiscovery, findPairing } = require('./discovery');
 const ui = require('./ui');
 process.once('exit', ui.footer);
 process.once('SIGINT', () => { ui.info('Session stopped.'); process.exit(130); });
@@ -44,17 +45,26 @@ async function main() {
   ui.success('ADB ready' + (command === 'doctor' ? '  ·  ' + (version.split(/\r?\n/).find(line => line.startsWith('Version ')) || version.split(/\r?\n/)[0]) : ''));
   if (command === 'doctor') {
     ui.section('NETWORK DISCOVERY');
-    ui.block(await adb(['mdns', 'check']));
+    const discovery = createDiscovery();
+    try {
+    const backend = await adb(['mdns', 'check']).catch(error => error.message);
+    if (backend) ui.block(backend);
+    else ui.warning('ADB returned no discovery status. Direct network discovery is used for QR pairing.');
+    await delay(1200);
+    if (discovery.error) ui.warning('Direct discovery: ' + discovery.error.message);
+    else ui.info('Direct mDNS listener running; ADB discovery is optional.');
     ui.section('NEARBY SERVICES');
-    const nearby = services(await adb(['mdns', 'services']));
+    const nearby = [...discovery.list(), ...services(await adb(['mdns', 'services']).catch(() => ''))];
     if (nearby.length) nearby.forEach(service => ui.block(`${service.name}  ${service.address}`));
     else ui.info('No services found. Enable Wireless debugging on your phone.');
     ui.devices(await adb(['devices', '-l']));
     return;
+    } finally { discovery.close(); }
   }
   if (command === 'pair') return manual();
   const name = 'ADB_WIFI_' + randomBytes(8).toString('hex');
   const password = randomBytes(16).toString('hex');
+  const discovery = createDiscovery();
   ui.section('SET UP YOUR PHONE');
   ui.step(1, 'Put your phone and PC on the same trusted Wi-Fi.');
   ui.step(2, 'Phone: Settings > Developer options > Wireless debugging.');
@@ -71,10 +81,7 @@ async function main() {
   const deadline = Date.now() + 180000;
   const attempts = new Map();
   while (Date.now() < deadline) {
-    let found;
-    try { found = services(await adb(['mdns', 'services'])); }
-    catch (error) { throw new Error(`Discovery unavailable: ${error.message}\nTry adbwifiqr pair to pair without multicast discovery.`); }
-    const service = found.find(s => s.type === '_adb-tls-pairing._tcp' && s.name === name);
+    const service = await findPairing(discovery, name, adb);
     if (service && (attempts.get(service.address) || 0) < 3) {
       attempts.set(service.address, (attempts.get(service.address) || 0) + 1);
       stopWaiting();
@@ -89,7 +96,6 @@ async function main() {
         await delay(2000);
         continue;
       }
-      await delay(3000);
       ui.success('Pairing complete.');
       ui.devices(await adb(['devices', '-l']));
       ui.section('NEXT STEP');
@@ -97,10 +103,10 @@ async function main() {
       ui.block('adbwifiqr connect <IP:PORT>');
       return;
     }
-    await delay(2000);
+    if (service) await delay(500);
   }
   throw new Error('No matching phone paired in time. Try adbwifiqr pair (or npm run pair in a source checkout). Check Wi-Fi, VPN, and firewall settings.');
-  } finally { stopWaiting(); }
+  } finally { stopWaiting(); discovery.close(); }
 }
 
 const connectArgs = process.argv.slice(2);
