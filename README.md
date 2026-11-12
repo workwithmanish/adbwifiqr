@@ -35,6 +35,8 @@ Then run from **any directory**:
 adbwifiqr
 ```
 
+Each screen displays the app version. The current version is **1.3.0**. If you still see the old interface after reinstalling, run `adbwifiqr --version` and check for another installation with `type -a adbwifiqr` on Linux/macOS or `Get-Command adbwifiqr -All` on PowerShell. Reopen your terminal after correcting PATH.
+
 No cloning or `npm start` is required for normal use. This package is distributed through GitHub and is **not published to the npm registry**. Use the complete GitHub install command above, not `npm install -g adbwifiqr` or `npx adbwifiqr`. The npm client downloads it from GitHub and creates the `adbwifiqr` terminal command.
 
 ### Requirements
@@ -63,7 +65,7 @@ adb version
 adb help
 ```
 
-Node must report `v22` or newer. ADB help must include `pair`. Version 1.2.0 adds direct network discovery, so an empty or unavailable ADB mDNS backend does not by itself prevent QR pairing. Versions depend on your repositories. If Node is too old, follow the [official Node.js download instructions](https://nodejs.org/en/download) to install a supported LTS version. If ADB is too old, install [Google's current Platform Tools](https://developer.android.com/tools/releases/platform-tools) and use the [custom ADB path](#custom-adb-path) below.
+Node must report `v22` or newer. ADB help must include `pair`. Version 1.3.0 uses node-dns-sd 0.4.2 for direct network discovery, so an empty or unavailable ADB mDNS backend does not by itself prevent QR pairing. Versions depend on your repositories. If Node is too old, follow the [official Node.js download instructions](https://nodejs.org/en/download) to install a supported LTS version. If ADB is too old, install [Google's current Platform Tools](https://developer.android.com/tools/releases/platform-tools) and use the [custom ADB path](#custom-adb-path) below.
 
 Configure a user-owned npm installation location so no `sudo npm` is needed:
 
@@ -262,7 +264,7 @@ Use a Unicode-capable terminal and monospaced font. Colors and animation are dis
 | `node`, `npm`, or `git` missing | Install the prerequisite, reopen the terminal, and check its version. |
 | Unsupported Node version | Install Node.js 22+ using a supported LTS release. |
 | ADB missing or too old | Install recent Platform Tools and configure `ADB_PATH`. ADB must support `pair`. |
-| Phone stays on “Pairing device” after scanning | Update to 1.2.0 or newer, stop the old session, reopen the phone's QR scanner, and scan the newly generated QR. This version uses direct mDNS discovery alongside ADB discovery. If both are blocked by the network, use code pairing. |
+| Phone stays on “Pairing device” after scanning | Update to 1.3.0 or newer, stop the old session, reopen the phone's QR scanner, and scan the newly generated QR. This version uses direct mDNS discovery alongside ADB discovery. If both are blocked by the network, use code pairing. |
 | QR times out / no nearby services | Check Wireless debugging, Wi-Fi, VPN, firewall, and VM networking. Try `adbwifiqr pair`. |
 | Pairing code rejected | Open a fresh pairing-code dialog and retry before it expires. |
 | Paired but disconnected | Use `adbwifiqr connect IP:PORT` with the main screen's connection port. |
@@ -382,9 +384,11 @@ GitHub Actions checks Node.js 22 and 24 on Linux, Windows, and macOS, including 
 
 The automated checks cover Node.js 22 and 24 on GitHub's Ubuntu, Windows, and macOS runners. npm 12 GitHub installation is checked on all three operating systems with its required per-command Git permission. Kali installation uses the documented prerequisites; the hosted Linux runner is Ubuntu, not Kali.
 
-The 29 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Discovery regressions cover empty/stalled ADB backends, unrelated pairing services, IPv4/IPv6 service addresses, and listener cleanup. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
+The 31 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Discovery regressions cover empty/stalled ADB backends, unrelated pairing services, the real DNS parser, non-overlapping scans, and discovery cleanup. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
 
-QR discovery listens directly for the phone's `_adb-tls-pairing._tcp` service while querying ADB as a fallback. The first matching service wins; an empty ADB backend cannot block the direct listener. `doctor` reports an empty ADB discovery status explicitly rather than printing a blank section. A real local UDP advertisement smoke test is available with `node scripts/discovery-smoke.cjs`; it tests multicast reception, not Android pairing.
+QR discovery listens directly for the phone's `_adb-tls-pairing._tcp` service while querying ADB as a fallback. The first matching service wins; an empty ADB backend cannot block the direct discovery engine. `doctor` reports an empty ADB discovery status explicitly rather than printing a blank section. A real local UDP packet smoke test on an isolated test port is available with `node scripts/discovery-smoke.cjs`; it tests UDP reception and DNS parsing, not Android pairing or multicast reachability to your phone.
+
+The direct engine is pinned to `node-dns-sd` **0.4.2**. It queries `_adb-tls-pairing._tcp.local`, reads the response's `address` and `service.port`, and runs `adb pair` with the QR password. Quick discovery returns as soon as the matching QR instance is found. It does not require `adb mdns services` to work.
 
 Phone models, Android vendor changes, router isolation, VPNs, firewalls, VM networking, and user permissions can still cause issues. Passing automation does not guarantee every phone/network combination. Run `adbwifiqr doctor` after installation and use pairing-code mode if discovery is blocked. See [TESTING.md](TESTING.md) for real-device verification steps and the release checklist.
 

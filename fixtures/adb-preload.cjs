@@ -2,19 +2,14 @@
 const childProcess = require('node:child_process');
 const crypto = require('node:crypto');
 crypto.randomBytes = size => Buffer.alloc(size, 0xab);
-const { EventEmitter } = require('node:events');
-require('bonjour-service').Bonjour = class {
-  constructor(options, onError) {
-    if (process.env.ADB_TEST_CASE === 'discovery-failure') setImmediate(() => onError(new Error('multicast unavailable')));
+require('node-dns-sd').discover = async options => {
+  if (process.env.ADB_TEST_CASE === 'discovery-failure') throw new Error('multicast unavailable');
+  if (process.env.ADB_TEST_CASE === 'direct-only') {
+    const device = { fqdn: 'ADB_WIFI_' + 'ab'.repeat(8) + '._adb-tls-pairing._tcp.local',
+      service: { port: 40124 }, address: '192.168.1.4' };
+    return options.filter(device) ? [device] : [];
   }
-  find(options, onService) {
-    if (process.env.ADB_TEST_CASE === 'direct-only') {
-      setImmediate(() => onService({ name: 'ADB_WIFI_' + 'ab'.repeat(8),
-        type: 'adb-tls-pairing', protocol: 'tcp', port: 40124, addresses: ['192.168.1.4'] }));
-    }
-    return Object.assign(new EventEmitter(), { update() {}, stop() {} });
-  }
-  destroy() {}
+  return [];
 };
 childProcess.execFile = (file, args, options, callback) => {
   const scenario = process.env.ADB_TEST_CASE;

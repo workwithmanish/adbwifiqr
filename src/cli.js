@@ -50,9 +50,9 @@ async function main() {
     const backend = await adb(['mdns', 'check']).catch(error => error.message);
     if (backend) ui.block(backend);
     else ui.warning('ADB returned no discovery status. Direct network discovery is used for QR pairing.');
-    await delay(1200);
+    await discovery.scan();
     if (discovery.error) ui.warning('Direct discovery: ' + discovery.error.message);
-    else ui.info('Direct mDNS listener running; ADB discovery is optional.');
+    else ui.info('Discovery engine: node-dns-sd 0.4.2; ADB discovery is optional.');
     ui.section('NEARBY SERVICES');
     const nearby = [...discovery.list(), ...services(await adb(['mdns', 'services']).catch(() => ''))];
     if (nearby.length) nearby.forEach(service => ui.block(`${service.name}  ${service.address}`));

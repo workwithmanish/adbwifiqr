@@ -9,7 +9,7 @@ function stopActivity() { activeSpinner?.(); }
 
 function header(mode) {
   console.log('\n  ' + bold('adb') + cyan(' / ') + bold('wifi qr'));
-  console.log('  ' + dim('Wireless Android pairing'));
+  console.log('  ' + dim('Wireless Android pairing  ·  v' + require('../package.json').version));
   console.log('\n' + rule());
   console.log('  ' + mode.toLowerCase() + dim('  ·  Android 11+'));
 }

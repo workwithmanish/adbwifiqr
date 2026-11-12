@@ -14,7 +14,7 @@ The workflow checks:
 
 Run results: https://github.com/workwithmanish/adbwifiqr/actions
 
-Version 1.2.0 also tests direct discovery with an empty or stalled ADB backend, rejects unrelated service names, and checks listener cleanup. Run `node scripts/discovery-smoke.cjs` for an optional real local UDP multicast test. It advertises a local test service; it does not contact or pair a phone. Multicast access must be permitted by the host network and firewall.
+Version 1.3.0 also tests direct discovery with an empty or stalled ADB backend, rejects unrelated service names, and checks listener cleanup. Run `node scripts/discovery-smoke.cjs` for an optional real local UDP packet test on port 15353. It sends a synthetic Android-style DNS response through the actual node-dns-sd 0.4.2 library; it does not contact or pair a phone or verify multicast reachability to another device.
 
 ## Real-device checks
 
