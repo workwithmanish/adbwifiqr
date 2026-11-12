@@ -1,0 +1,15 @@
+{
+  "name": "adbwifiqr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Beginner-friendly Android wireless debugging pairing",
+  "scripts": {
+    "start": "node src/cli.js",
+    "doctor": "node src/cli.js doctor",
+    "devices": "node src/cli.js devices",
+    "pair": "node src/cli.js pair",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "qrcode-terminal": "0.12.0" }
+}

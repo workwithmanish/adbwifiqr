@@ -1,0 +1,8 @@
+node_modules/
+.android/
+.npm-cache/
+*.log
+platform-tools/
+platform-tools*.zip
+.env
+.env.*
