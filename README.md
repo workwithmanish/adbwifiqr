@@ -14,6 +14,21 @@ Install directly from GitHub:
 npm install -g github:workwithmanish/adbwifiqr
 ```
 
+**npm 12 or `EALLOWGIT`?** Newer npm versions block Git downloads by default. Explicitly allow Git fetching for this installation only:
+
+```bash
+npm install -g --allow-git=all github:workwithmanish/adbwifiqr
+```
+
+If using the user-owned prefix recommended for Kali/macOS:
+
+```bash
+npm install -g --prefix "$HOME/.local" --allow-git=all github:workwithmanish/adbwifiqr
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+This flag applies only to that command; it does not change your global npm configuration. The package has no installation lifecycle scripts. If an older npm reports an unknown `allow-git` option, omit the flag. Check your version with `npm --version`. Use the same flag when updating on npm 12.
+
 Then run from **any directory**:
 
 ```bash
@@ -242,6 +257,7 @@ Use a Unicode-capable terminal and monospaced font. Colors and animation are dis
 | --- | --- |
 | `adbwifiqr: command not found` | Confirm installation succeeded. Add your npm global executable directory to PATH and reopen the terminal. |
 | `EACCES` during npm install | Use the user-owned `--prefix "$HOME/.local"` installation above. Do not use sudo npm. |
+| `EALLOWGIT`: Git fetching disabled | On npm 12, add `--allow-git=all` to the GitHub install command for this invocation only. See Install above. |
 | `node`, `npm`, or `git` missing | Install the prerequisite, reopen the terminal, and check its version. |
 | Unsupported Node version | Install Node.js 22+ using a supported LTS release. |
 | ADB missing or too old | Install recent Platform Tools and configure `ADB_PATH`. ADB must support `pair` and `mdns`. |
@@ -289,6 +305,8 @@ npm install -g --prefix "$HOME/.local" github:workwithmanish/adbwifiqr
 ```
 
 Then run `adbwifiqr doctor`. Your installed-command settings are outside the package directory, so reinstalling does not remove them.
+
+On npm 12, include `--allow-git=all` in either update command, as described under Install.
 
 ## Uninstall
 

@@ -38,3 +38,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: '& "${{ runner.temp }}/adbwifiqr-cli/adbwifiqr.cmd" --help'
+
+  npm12:
+    name: GitHub installation / npm 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global npm@12
+      - run: npm --version
+      - run: npm install --global --prefix "${{ runner.temp }}/adbwifiqr-cli-npm12" --allow-git=all "github:workwithmanish/adbwifiqr#${{ github.sha }}"
+      - run: '"${{ runner.temp }}/adbwifiqr-cli-npm12/bin/adbwifiqr" --help'
