@@ -4,7 +4,7 @@
 
 A minimal terminal tool for Android wireless debugging: scan a QR, pair with a six-digit code, and check connected devices.
 
-[Install](#install) · [Pair your phone](#pair-your-phone) · [Commands](#commands) · [Troubleshooting](#troubleshooting) · [Update](#update)
+[Install](#install) · [Pair your phone](#pair-your-phone) · [Open an ADB shell](#open-an-adb-shell-after-qr-pairing) · [Commands](#commands) · [Troubleshooting](#troubleshooting) · [Update](#update)
 
 ## Install
 
@@ -202,6 +202,43 @@ adbwifiqr devices
 
 Replace the example address with your phone's actual address. Ports can change when Wireless debugging restarts. You generally need not pair again while the phone remembers this computer and its ADB keys remain available.
 
+### Open an ADB shell after QR pairing
+
+**QR pairing authorizes the computer. An active ADB connection is also required before `adb shell` will work.** Version 1.3.1 attempts that connection automatically. If you see `adb: no devices/emulators found`, or your device list is empty, connect manually as follows.
+
+1. On your **Android phone**, open **Settings > Developer options > Wireless debugging**.
+2. On that **main page**, find **IP address & Port**. Return from the QR scanner or pairing-code dialog to see it. This is the **connection address**, not the temporary pairing address.
+3. On the computer, run `adb connect` with the address currently shown there. For example:
+
+```bash
+adb connect 192.168.0.182:36099
+```
+
+Replace `192.168.0.182:36099` with **your phone's current IP and port**. A successful response looks like:
+
+```text
+connected to 192.168.0.182:36099
+```
+
+4. Confirm the device is available, then open its shell:
+
+```bash
+adb devices
+adb shell
+```
+
+The device list should contain a row with state `device`. The shell prompt may look like `snow:/ $`; the name depends on the phone. Type `exit` to leave the phone's shell and return to your computer's terminal.
+
+If more than one device is connected, select the exact serial from `adb devices`:
+
+```bash
+adb -s 192.168.0.182:36099 shell
+```
+
+Use your actual device serial in place of the example. If you configured a custom `ADB_PATH`, use that same ADB executable for these direct ADB commands. You can also use `adbwifiqr connect IP:PORT` and `adbwifiqr devices` for the connection and device-list steps.
+
+The pairing and connection ports are different and can change when Wireless debugging restarts. Do not reuse a port from an old pairing message. Read the current connection address on Android's main Wireless debugging page.
+
 ## Commands
 
 These commands work from any directory after global installation:
@@ -270,6 +307,7 @@ Use a Unicode-capable terminal and monospaced font. Colors and animation are dis
 | QR times out / no nearby services | Check Wireless debugging, Wi-Fi, VPN, firewall, and VM networking. Try `adbwifiqr pair`. |
 | Pairing code rejected | Open a fresh pairing-code dialog and retry before it expires. |
 | Paired but disconnected | Use `adbwifiqr connect IP:PORT` with the main screen's connection port. |
+| `adb shell` says `no devices/emulators found` after pairing | Read **IP address & Port** on Android's main Wireless debugging page, run `adb connect IP:PORT`, confirm with `adb devices`, then run `adb shell`. See [Open an ADB shell](#open-an-adb-shell-after-qr-pairing). |
 | Connection refused | Check the current IP and port and make sure Wireless debugging is on. |
 | Offline or unauthorized | Unlock the phone, check prompts, and retry. If needed, Forget this computer and pair again. |
 | QR distorted | Maximize the terminal, reduce font size, and prevent line wrapping. Try code pairing. |

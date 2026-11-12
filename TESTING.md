@@ -33,6 +33,10 @@ These are a checklist, **not a claim that every scenario below has been tested**
 9. Reinstall/update the package. Confirm settings persist and the command remains available from another directory.
 10. Uninstall with the same npm prefix. Confirm the executable is removed. Revoke pairing on the phone separately.
 
+After either QR or code pairing, verify shell access too: read the connection address on Android's main Wireless debugging page, run `adb connect IP:PORT` if auto-connect has not completed, check `adb devices` for state `device`, then run `adb shell`. Confirm the phone's shell opens and `exit` returns to the computer terminal. With multiple devices, use `adb -s SERIAL shell`.
+
+User-reported Kali result: QR pairing succeeded on the earlier 1.2.0 build; `adb shell` initially reported no devices. Connecting manually with the main Wireless debugging page's address succeeded, after which `adb shell` opened the phone's `snow:/ $` prompt. This confirms that manual workflow on that setup; it does not verify automatic connection in newer versions.
+
 For Kali, check a native installation and, if relevant, a VM with bridged networking. A successful Ubuntu CI job does not verify Kali repository package versions or VM multicast access.
 
 ## Before sharing a version
