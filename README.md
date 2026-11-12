@@ -35,7 +35,7 @@ Then run from **any directory**:
 adbwifiqr
 ```
 
-Each screen displays the app version. The current version is **1.3.0**. If you still see the old interface after reinstalling, run `adbwifiqr --version` and check for another installation with `type -a adbwifiqr` on Linux/macOS or `Get-Command adbwifiqr -All` on PowerShell. Reopen your terminal after correcting PATH.
+Each screen displays the app version. The current version is **1.3.1**. If you still see the old interface after reinstalling, run `adbwifiqr --version` and check for another installation with `type -a adbwifiqr` on Linux/macOS or `Get-Command adbwifiqr -All` on PowerShell. Reopen your terminal after correcting PATH.
 
 No cloning or `npm start` is required for normal use. This package is distributed through GitHub and is **not published to the npm registry**. Use the complete GitHub install command above, not `npm install -g adbwifiqr` or `npx adbwifiqr`. The npm client downloads it from GitHub and creates the `adbwifiqr` terminal command.
 
@@ -153,6 +153,8 @@ adbwifiqr devices
 ```
 
 A device marked **connected** is ready for ADB. Pairing and connection are separate steps; if the device is absent, use [Connect after pairing](#connect-after-pairing).
+
+Version **1.3.1** automatically looks for the paired phone's separate connection service and runs `adb connect` using its advertised connection port. This works independently of ADB's own mDNS backend. If the network does not expose that service, pairing remains successful and the tool explains how to connect manually. `doctor` now checks both pairing and connection services.
 
 The tool waits up to three minutes. Press **Ctrl+C** to stop. Each run generates fresh QR credentials; completed pairing remains on your phone after stopping.
 
@@ -384,7 +386,7 @@ GitHub Actions checks Node.js 22 and 24 on Linux, Windows, and macOS, including 
 
 The automated checks cover Node.js 22 and 24 on GitHub's Ubuntu, Windows, and macOS runners. npm 12 GitHub installation is checked on all three operating systems with its required per-command Git permission. Kali installation uses the documented prerequisites; the hosted Linux runner is Ubuntu, not Kali.
 
-The 31 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Discovery regressions cover empty/stalled ADB backends, unrelated pairing services, the real DNS parser, non-overlapping scans, and discovery cleanup. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
+The 35 tests check argument validation, missing/non-executable/unresponsive ADB, connection failure exit codes, empty device lists, discovery errors, and the QR pairing sequence using simulated ADB responses. Discovery regressions cover empty/stalled ADB backends, unrelated pairing services, the real DNS parser, non-overlapping scans, and discovery cleanup. Packaging checks ensure that only the intended application files ship. These tests run on each push and pull request.
 
 QR discovery listens directly for the phone's `_adb-tls-pairing._tcp` service while querying ADB as a fallback. The first matching service wins; an empty ADB backend cannot block the direct discovery engine. `doctor` reports an empty ADB discovery status explicitly rather than printing a blank section. A real local UDP packet smoke test on an isolated test port is available with `node scripts/discovery-smoke.cjs`; it tests UDP reception and DNS parsing, not Android pairing or multicast reachability to your phone.
 

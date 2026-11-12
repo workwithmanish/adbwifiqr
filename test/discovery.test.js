@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createDiscovery, pairingService, findPairing } = require('../src/discovery');
+const { createDiscovery, pairingService, findPairing, connectPairedPhone } = require('../src/discovery');
 const phone = { fqdn: 'ADB_WIFI_expected._adb-tls-pairing._tcp.local',
   address: '192.168.1.8', service: { port: 40123 } };
 const name = 'ADB_WIFI_expected';
@@ -71,4 +71,37 @@ test('real node-dns-sd parser understands an Android-style DNS response', () => 
   const device = require('node-dns-sd')._createDeviceObject(packet);
   assert.equal(pairingService(device).name, name);
   assert.equal(pairingService(device).address, '192.168.1.8:40123');
+});
+
+test('auto-connect uses the connection advertisement, never the pairing port', async () => {
+  const calls = [];
+  let connected = false;
+  const connection = { ...phone, fqdn: 'adb-guid._adb-tls-connect._tcp.local', service: { port: 50123 } };
+  const scanner = { discover: async options => {
+    assert.equal(options.name, '_adb-tls-connect._tcp.local');
+    assert.equal(options.filter({ ...connection, address: '192.168.1.9' }), false);
+    assert.equal(options.filter(connection), true);
+    return [connection];
+  } };
+  const result = await connectPairedPhone('192.168.1.8:40123', async args => {
+    calls.push(args);
+    if (args[0] === 'connect') { connected = true; return 'connected to 192.168.1.8:50123'; }
+    return 'List of devices attached\n' + (connected ? '192.168.1.8:50123 device' : '');
+  }, scanner);
+  assert.equal(result.connected, true);
+  assert.deepEqual(calls.find(args => args[0] === 'connect'), ['connect', '192.168.1.8:50123']);
+});
+
+test('no connection advertisement preserves paired-but-not-connected status', async () => {
+  const result = await connectPairedPhone('192.168.1.8:40123', async args => {
+    assert.equal(args[0], 'devices');
+    return 'List of devices attached';
+  }, { discover: async () => [] });
+  assert.equal(result.connected, false);
+});
+
+test('an unrelated connected device does not count as the paired phone', async () => {
+  const result = await connectPairedPhone('192.168.1.8:40123', async () =>
+    'List of devices attached\n192.168.1.99:50123 device', { discover: async () => [] });
+  assert.equal(result.connected, false);
 });

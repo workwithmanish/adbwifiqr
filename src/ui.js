@@ -25,7 +25,7 @@ function block(text) { console.log(String(text).split(/\r?\n/).map(line => '  ' 
 function devices(output) {
   section('DEVICES');
   const rows = output.split(/\r?\n/).filter(line => line.trim() && !line.startsWith('List of devices'));
-  if (!rows.length) return info('No devices connected yet. Pair your phone to get started.');
+  if (!rows.length) return info('No devices connected yet. Pairing and active connection are separate.');
   for (const row of rows) {
     const [serial, state, ...details] = row.trim().split(/\s+/);
     const model = details.find(item => item.startsWith('model:'))?.slice(6).replace(/_/g, ' ');

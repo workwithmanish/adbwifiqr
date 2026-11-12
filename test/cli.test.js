@@ -91,3 +91,11 @@ test('Kali regression: QR pairs using direct discovery when ADB mDNS is empty', 
   assert.match(result.output, /Phone discovered/);
   assert.match(result.output, /Pairing complete/);
 });
+
+test('Kali regression: pairing is followed by direct discovery of the connection port', () => {
+  const result = run([], 'auto-connect');
+  assert.equal(result.status, 0);
+  assert.match(result.output, /Phone connected/);
+  assert.match(result.output, /Test Phone/);
+  assert.doesNotMatch(result.output, /active connection is still pending/);
+});

@@ -18,6 +18,8 @@ Version 1.3.0 also tests direct discovery with an empty or stalled ADB backend, 
 
 ## Real-device checks
 
+Version 1.3.1 adds regression checks for automatic connection after pairing: only the paired phone's address is selected, its connection port is used instead of its pairing port, and an unrelated connected device does not count as success. Real-phone confirmation is still required.
+
 These are a checklist, **not a claim that every scenario below has been tested**. Record the OS, Node/npm/ADB versions, phone model, Android version, network type, and result when doing them. Do not record pairing codes, QR credentials, or private keys.
 
 1. Install as a regular user into a writable npm prefix, open a new terminal, and run `adbwifiqr --version` and `adbwifiqr --help` from outside the source directory.

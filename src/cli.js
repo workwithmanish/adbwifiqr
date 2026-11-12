@@ -3,7 +3,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const readline = require('node:readline/promises');
 const qr = require('qrcode-terminal');
 const { adb, services, endpoint, connectionResult } = require('./adb');
-const { createDiscovery, findPairing } = require('./discovery');
+const { createDiscovery, findPairing, connectPairedPhone, discoverConnections } = require('./discovery');
 const ui = require('./ui');
 process.once('exit', ui.footer);
 process.once('SIGINT', () => { ui.info('Session stopped.'); process.exit(130); });
@@ -54,8 +54,9 @@ async function main() {
     if (discovery.error) ui.warning('Direct discovery: ' + discovery.error.message);
     else ui.info('Discovery engine: node-dns-sd 0.4.2; ADB discovery is optional.');
     ui.section('NEARBY SERVICES');
-    const nearby = [...discovery.list(), ...services(await adb(['mdns', 'services']).catch(() => ''))];
-    if (nearby.length) nearby.forEach(service => ui.block(`${service.name}  ${service.address}`));
+    const nearby = [...discovery.list(), ...await discoverConnections().catch(() => []),
+      ...services(await adb(['mdns', 'services']).catch(() => ''))];
+    if (nearby.length) nearby.forEach(service => ui.block(`${service.type.includes('connect') ? 'connection' : 'pairing'}  ${service.address}  ${service.name}`));
     else ui.info('No services found. Enable Wireless debugging on your phone.');
     ui.devices(await adb(['devices', '-l']));
     return;
@@ -97,9 +98,21 @@ async function main() {
         continue;
       }
       ui.success('Pairing complete.');
-      ui.devices(await adb(['devices', '-l']));
+      await discovery.close();
+      const stopConnecting = ui.spinner('Connecting to your paired phone');
+      let connection;
+      try { connection = await connectPairedPhone(service.address, adb); }
+      catch (error) { ui.warning('Paired, but auto-connect failed: ' + error.message); }
+      finally { stopConnecting(); }
+      if (connection?.connected) {
+        ui.success('Phone connected.');
+        ui.devices(connection.output);
+        return;
+      }
+      if (connection) ui.devices(connection.output);
       ui.section('NEXT STEP');
-      ui.info('If disconnected, use the main Wireless debugging IP and port:');
+      ui.info('Your phone is paired; the active connection is still pending.');
+      ui.info('Use the IP and connection port on the main Wireless debugging screen:');
       ui.block('adbwifiqr connect <IP:PORT>');
       return;
     }
