@@ -3,6 +3,19 @@ const { mkdirSync } = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
+function adbEnvironment(projectRoot, base = process.env, platform = process.platform) {
+  const paths = platform === 'win32' ? path.win32 : path.posix;
+  const home = paths.join(projectRoot, '.android');
+  const env = { ...base, HOME: projectRoot, ANDROID_USER_HOME: home,
+    ANDROID_SDK_HOME: projectRoot, ADB_VENDOR_KEYS: home };
+  if (platform === 'win32') {
+    env.USERPROFILE = projectRoot;
+    env.HOMEDRIVE = paths.parse(projectRoot).root.replace(/[\\/]$/, '');
+    env.HOMEPATH = projectRoot.slice(paths.parse(projectRoot).root.length - 1);
+  }
+  return env;
+}
+
 function adb(args) {
   const home = path.join(root, '.android');
   mkdirSync(home, { recursive: true });
@@ -11,11 +24,7 @@ function adb(args) {
       cwd: root,
       windowsHide: true,
       timeout: 20000,
-      env: { ...process.env, HOME: root, USERPROFILE: root,
-        HOMEDRIVE: path.parse(root).root.replace(/[\\/]$/, ''),
-        HOMEPATH: root.slice(path.parse(root).root.length - 1),
-        ANDROID_USER_HOME: home, ANDROID_SDK_HOME: root,
-        ADB_VENDOR_KEYS: home },
+      env: adbEnvironment(root),
     }, (error, stdout, stderr) => {
       if (error) {
         reject(new Error(error.code === 'ENOENT'
@@ -41,4 +50,4 @@ function endpoint(value) {
   return value;
 }
 
-module.exports = { adb, services, endpoint };
+module.exports = { adb, services, endpoint, adbEnvironment };

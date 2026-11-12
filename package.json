@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Beginner-friendly Android wireless debugging pairing",
+  "author": "workwithmanish",
+  "repository": { "type": "git", "url": "https://github.com/workwithmanish/adbwifiqr.git" },
+  "homepage": "https://github.com/workwithmanish/adbwifiqr#readme",
+  "bugs": { "url": "https://github.com/workwithmanish/adbwifiqr/issues" },
   "scripts": {
     "start": "node src/cli.js",
     "doctor": "node src/cli.js doctor",
@@ -10,6 +14,6 @@
     "pair": "node src/cli.js pair",
     "test": "node --test"
   },
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "dependencies": { "qrcode-terminal": "0.12.0" }
 }
