@@ -59,7 +59,7 @@ jobs:
       - name: Install without deprecated URL parsing
         run: npm install --global --prefix "${{ runner.temp }}/adbwifiqr-cli-npm12" --allow-remote=all --prefer-online "https://codeload.github.com/workwithmanish/adbwifiqr/tar.gz/${{ github.sha }}"
         env:
-          NODE_OPTIONS: '--require "${{ github.workspace }}/fixtures/forbid-legacy-url.cjs"'
+          NODE_OPTIONS: --require=./fixtures/forbid-legacy-url.cjs
       - if: runner.os != 'Windows'
         run: '"${{ runner.temp }}/adbwifiqr-cli-npm12/bin/adbwifiqr" --help'
       - if: runner.os == 'Windows'
